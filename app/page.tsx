@@ -42,7 +42,13 @@ type GuildUser = {
   created_at?: string | null;
 };
 
-const ADMIN_EMAIL = "c-tiger@naver.com";
+type SiteSettings = {
+  id: number;
+  notice_text: string;
+  updated_at?: string | null;
+};
+
+const ADMIN_EMAILS = ["c-tiger@naver.com"];
 
 export default function Home() {
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
@@ -56,6 +62,21 @@ export default function Home() {
     return timeValue.slice(0, 5);
   };
 
+  const isPastByValues = (dateValue: string, timeValue: string) => {
+    const dateTime = new Date(`${dateValue}T${formatTime(timeValue) || "00:00"}`);
+    return dateTime.getTime() < Date.now();
+  };
+
+  const deriveStatus = (
+    dateValue: string,
+    timeValue: string,
+    currentMembers: number,
+    maxMembers: number
+  ) => {
+    if (isPastByValues(dateValue, timeValue)) return "종료";
+    return currentMembers >= maxMembers ? "마감" : "모집중";
+  };
+
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -65,6 +86,8 @@ export default function Home() {
   const [parties, setParties] = useState<Party[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [guildUsers, setGuildUsers] = useState<GuildUser[]>([]);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [adminLoading, setAdminLoading] = useState(false);
 
@@ -88,12 +111,30 @@ export default function Home() {
   const [condition, setCondition] = useState("");
   const [memo, setMemo] = useState("");
 
+  const [viewMode, setViewMode] = useState<"all" | "myParties" | "myApplications">(
+    "all"
+  );
   const [bossFilter, setBossFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortOption, setSortOption] = useState<"latest" | "dateAsc" | "dateDesc">(
     "latest"
   );
+
   const [adminTab, setAdminTab] = useState<"pending" | "approved">("pending");
+
+  const [editingPartyId, setEditingPartyId] = useState<number | null>(null);
+  const [editBoss, setEditBoss] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editMaxMembers, setEditMaxMembers] = useState("");
+  const [editCondition, setEditCondition] = useState("");
+  const [editMemo, setEditMemo] = useState("");
+
+  const [noticeDraft, setNoticeDraft] = useState("");
+
+  const [resetMode, setResetMode] = useState(false);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetPasswordConfirm, setResetPasswordConfirm] = useState("");
 
   const currentNickname =
     profile?.nickname ||
@@ -109,9 +150,7 @@ export default function Home() {
   const currentJob =
     profile?.job || (user?.user_metadata?.job as string | undefined) || "";
 
-  const isAdmin =
-    (user?.email || "").toLowerCase() === ADMIN_EMAIL.toLowerCase();
-
+  const isAdmin = ADMIN_EMAILS.includes((user?.email || "").toLowerCase());
   const isApproved = isAdmin || profile?.is_approved === true;
 
   const applicationsByParty = useMemo(() => {
@@ -131,33 +170,6 @@ export default function Home() {
     return Array.from(new Set(parties.map((party) => party.boss))).sort();
   }, [parties]);
 
-  const filteredParties = useMemo(() => {
-    const list = [...parties];
-
-    const filtered = list.filter((party) => {
-      const bossMatched = bossFilter === "all" || party.boss === bossFilter;
-      const statusMatched = statusFilter === "all" || party.status === statusFilter;
-      return bossMatched && statusMatched;
-    });
-
-    filtered.sort((a, b) => {
-      if (sortOption === "latest") {
-        return b.id - a.id;
-      }
-
-      const aDate = new Date(`${a.date}T${formatTime(a.time) || "00:00"}`);
-      const bDate = new Date(`${b.date}T${formatTime(b.time) || "00:00"}`);
-
-      if (sortOption === "dateAsc") {
-        return aDate.getTime() - bDate.getTime();
-      }
-
-      return bDate.getTime() - aDate.getTime();
-    });
-
-    return filtered;
-  }, [parties, bossFilter, statusFilter, sortOption]);
-
   const pendingUsers = useMemo(
     () => guildUsers.filter((item) => item.is_approved !== true),
     [guildUsers]
@@ -168,20 +180,143 @@ export default function Home() {
     [guildUsers]
   );
 
+  const filteredParties = useMemo(() => {
+    let next = [...parties];
+
+    if (viewMode === "myParties") {
+      next = next.filter((party) => party.leader === currentNickname);
+    }
+
+    if (viewMode === "myApplications") {
+      next = next.filter((party) =>
+        (applicationsByParty[party.id] || []).some(
+          (application) => application.nickname === currentNickname
+        )
+      );
+    }
+
+    next = next.filter((party) => {
+      const bossMatched = bossFilter === "all" || party.boss === bossFilter;
+      const statusMatched = statusFilter === "all" || party.status === statusFilter;
+      return bossMatched && statusMatched;
+    });
+
+    next.sort((a, b) => {
+      if (sortOption === "latest") return b.id - a.id;
+
+      const aTime = new Date(`${a.date}T${formatTime(a.time) || "00:00"}`).getTime();
+      const bTime = new Date(`${b.date}T${formatTime(b.time) || "00:00"}`).getTime();
+
+      if (sortOption === "dateAsc") return aTime - bTime;
+      return bTime - aTime;
+    });
+
+    return next;
+  }, [
+    parties,
+    viewMode,
+    bossFilter,
+    statusFilter,
+    sortOption,
+    currentNickname,
+    applicationsByParty,
+  ]);
+
+  const activeParties = useMemo(
+    () =>
+      filteredParties.filter(
+        (party) => !isPastByValues(party.date, party.time)
+      ),
+    [filteredParties]
+  );
+
+  const pastParties = useMemo(
+    () =>
+      filteredParties.filter((party) => isPastByValues(party.date, party.time)),
+    [filteredParties]
+  );
+
+  const loadGuildUsers = async (force = false) => {
+    if (!force && !isAdmin) return;
+
+    setAdminLoading(true);
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, nickname, character_name, job, is_approved, created_at")
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("유저 목록 불러오기 실패:", error);
+      setGuildUsers([]);
+      setAdminLoading(false);
+      return;
+    }
+
+    setGuildUsers((data as GuildUser[]) || []);
+    setAdminLoading(false);
+  };
+
+  const loadSiteSettings = async () => {
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("공지 불러오기 실패:", error);
+      setSiteSettings(null);
+      setNoticeDraft("");
+      return;
+    }
+
+    setSiteSettings((data as SiteSettings | null) || null);
+    setNoticeDraft(data?.notice_text || "");
+  };
+
   const loadMainData = async () => {
     setLoading(true);
 
-    const [partiesResult, applicationsResult] = await Promise.allSettled([
-      supabase.from("parties").select("*").order("id", { ascending: false }),
-      supabase.from("applications").select("*").order("id", { ascending: true }),
-    ]);
+    const [partiesResult, applicationsResult, settingsResult] =
+      await Promise.allSettled([
+        supabase.from("parties").select("*").order("id", { ascending: false }),
+        supabase.from("applications").select("*").order("id", { ascending: true }),
+        supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
+      ]);
 
     if (partiesResult.status === "fulfilled") {
       if (partiesResult.value.error) {
         console.error("모집글 불러오기 실패:", partiesResult.value.error);
         setParties([]);
       } else {
-        setParties(partiesResult.value.data || []);
+        const rawParties = (partiesResult.value.data || []) as Party[];
+        const normalized = rawParties.map((party) => ({
+          ...party,
+          status: deriveStatus(
+            party.date,
+            party.time,
+            party.current_members,
+            party.max_members
+          ),
+        }));
+
+        const needEndIds = normalized
+          .filter((party) => party.status === "종료")
+          .map((party) => party.id);
+
+        if (needEndIds.length > 0) {
+          const { error } = await supabase
+            .from("parties")
+            .update({ status: "종료" })
+            .in("id", needEndIds);
+
+          if (error) {
+            console.error("지난 일정 자동 종료 실패:", error);
+          }
+        }
+
+        setParties(normalized);
       }
     } else {
       console.error("모집글 불러오기 실패:", partiesResult.reason);
@@ -200,28 +335,22 @@ export default function Home() {
       setApplications([]);
     }
 
-    setLoading(false);
-  };
-
-  const loadGuildUsers = async () => {
-    if (!isAdmin && !user?.email) return;
-
-    setAdminLoading(true);
-
-    const { data, error } = await supabase
-      .from("users")
-      .select("id, nickname, character_name, job, is_approved, created_at")
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      console.error("유저 목록 불러오기 실패:", error);
-      setGuildUsers([]);
-      setAdminLoading(false);
-      return;
+    if (settingsResult.status === "fulfilled") {
+      if (settingsResult.value.error) {
+        console.error("공지 불러오기 실패:", settingsResult.value.error);
+        setSiteSettings(null);
+        setNoticeDraft("");
+      } else {
+        setSiteSettings((settingsResult.value.data as SiteSettings | null) || null);
+        setNoticeDraft(settingsResult.value.data?.notice_text || "");
+      }
+    } else {
+      console.error("공지 불러오기 실패:", settingsResult.reason);
+      setSiteSettings(null);
+      setNoticeDraft("");
     }
 
-    setGuildUsers((data as GuildUser[]) || []);
-    setAdminLoading(false);
+    setLoading(false);
   };
 
   const ensureUserProfile = async (authUser: User) => {
@@ -287,8 +416,10 @@ export default function Home() {
     await ensureUserProfile(authUser);
     await loadMainData();
 
-    if ((authUser.email || "").toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      await loadGuildUsers();
+    const isBootAdmin = ADMIN_EMAILS.includes((authUser.email || "").toLowerCase());
+
+    if (isBootAdmin) {
+      await loadGuildUsers(true);
     } else {
       setGuildUsers([]);
     }
@@ -297,6 +428,12 @@ export default function Home() {
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (window.location.hash.includes("type=recovery")) {
+        setResetMode(true);
+      }
+    }
+
     let mounted = true;
 
     supabase.auth.getSession().then(async ({ data }) => {
@@ -313,12 +450,17 @@ export default function Home() {
         setGuildUsers([]);
         setProfileReady(true);
         setLoading(false);
+        await loadSiteSettings();
       }
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setResetMode(true);
+      }
+
       setSession(newSession);
       setUser(newSession?.user ?? null);
       setAuthReady(true);
@@ -343,6 +485,55 @@ export default function Home() {
     };
   }, []);
 
+  const handleSendResetEmail = async () => {
+    if (!loginEmail) {
+      alert("비밀번호 재설정할 이메일을 먼저 입력해줘.");
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(loginEmail, {
+      redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+    });
+
+    if (error) {
+      alert(`재설정 메일 전송 실패: ${error.message}`);
+      return;
+    }
+
+    alert("비밀번호 재설정 메일을 보냈어.");
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!resetPassword || !resetPasswordConfirm) {
+      alert("새 비밀번호를 입력해줘.");
+      return;
+    }
+
+    if (resetPassword !== resetPasswordConfirm) {
+      alert("비밀번호 확인이 일치하지 않아.");
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({
+      password: resetPassword,
+    });
+
+    if (error) {
+      alert(`비밀번호 변경 실패: ${error.message}`);
+      return;
+    }
+
+    setResetPassword("");
+    setResetPasswordConfirm("");
+    setResetMode(false);
+
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    alert("비밀번호가 변경됐어.");
+  };
+
   const handleSignup = async () => {
     if (
       !signupEmail ||
@@ -352,6 +543,17 @@ export default function Home() {
       !signupJob
     ) {
       alert("회원가입 항목을 전부 입력해줘.");
+      return;
+    }
+
+    const { data: existingNickname } = await supabase
+      .from("users")
+      .select("id")
+      .eq("nickname", signupNickname)
+      .maybeSingle();
+
+    if (existingNickname) {
+      alert("이미 사용 중인 닉네임이야.");
       return;
     }
 
@@ -391,7 +593,9 @@ export default function Home() {
       );
 
       if (profileError) {
-        console.error("users 저장 실패:", profileError);
+        alert(`프로필 저장 실패: ${profileError.message}`);
+        setAuthLoading(false);
+        return;
       }
     }
 
@@ -438,52 +642,29 @@ export default function Home() {
     }
   };
 
-  const handleApproveUser = async (targetId: string) => {
-    const { error } = await supabase
-      .from("users")
-      .update({ is_approved: true })
-      .eq("id", targetId);
+  const handleSaveNotice = async () => {
+    const { data, error } = await supabase
+      .from("site_settings")
+      .upsert(
+        [
+          {
+            id: 1,
+            notice_text: noticeDraft,
+            updated_at: new Date().toISOString(),
+          },
+        ],
+        { onConflict: "id" }
+      )
+      .select()
+      .single();
 
     if (error) {
-      alert(`승인 실패: ${error.message}`);
+      alert(`공지 저장 실패: ${error.message}`);
       return;
     }
 
-    setGuildUsers((prev) =>
-      prev.map((item) =>
-        item.id === targetId ? { ...item, is_approved: true } : item
-      )
-    );
-
-    if (profile?.id === targetId) {
-      setProfile((prev) =>
-        prev ? { ...prev, is_approved: true } : prev
-      );
-    }
-  };
-
-  const handleRevokeUser = async (targetId: string) => {
-    const { error } = await supabase
-      .from("users")
-      .update({ is_approved: false })
-      .eq("id", targetId);
-
-    if (error) {
-      alert(`승인취소 실패: ${error.message}`);
-      return;
-    }
-
-    setGuildUsers((prev) =>
-      prev.map((item) =>
-        item.id === targetId ? { ...item, is_approved: false } : item
-      )
-    );
-
-    if (profile?.id === targetId) {
-      setProfile((prev) =>
-        prev ? { ...prev, is_approved: false } : prev
-      );
-    }
+    setSiteSettings(data as SiteSettings);
+    alert("공지 저장 완료!");
   };
 
   const handleAddParty = async () => {
@@ -510,6 +691,7 @@ export default function Home() {
     }
 
     const timeToSave = `${time}:00`;
+    const statusToSave = deriveStatus(date, timeToSave, 1, max);
 
     const { data, error } = await supabase
       .from("parties")
@@ -521,7 +703,7 @@ export default function Home() {
           leader: currentNickname,
           current_members: 1,
           max_members: max,
-          status: max === 1 ? "마감" : "모집중",
+          status: statusToSave,
           condition,
           memo,
         },
@@ -544,6 +726,74 @@ export default function Home() {
     if (data) {
       setParties((prev) => [data as Party, ...prev]);
     }
+  };
+
+  const startEditParty = (party: Party) => {
+    setEditingPartyId(party.id);
+    setEditBoss(party.boss);
+    setEditDate(party.date);
+    setEditTime(formatTime(party.time));
+    setEditMaxMembers(String(party.max_members));
+    setEditCondition(party.condition || "");
+    setEditMemo(party.memo || "");
+  };
+
+  const cancelEditParty = () => {
+    setEditingPartyId(null);
+    setEditBoss("");
+    setEditDate("");
+    setEditTime("");
+    setEditMaxMembers("");
+    setEditCondition("");
+    setEditMemo("");
+  };
+
+  const handleSavePartyEdit = async (party: Party) => {
+    if (!editBoss || !editDate || !editTime || !editMaxMembers) {
+      alert("수정 항목을 전부 입력해줘.");
+      return;
+    }
+
+    const nextMax = Number(editMaxMembers);
+
+    if (nextMax < party.current_members) {
+      alert("최대 인원은 현재 인원보다 작을 수 없어.");
+      return;
+    }
+
+    const editTimeToSave = `${editTime}:00`;
+    const nextStatus = deriveStatus(
+      editDate,
+      editTimeToSave,
+      party.current_members,
+      nextMax
+    );
+
+    const { data, error } = await supabase
+      .from("parties")
+      .update({
+        boss: editBoss,
+        date: editDate,
+        time: editTimeToSave,
+        max_members: nextMax,
+        condition: editCondition,
+        memo: editMemo,
+        status: nextStatus,
+      })
+      .eq("id", party.id)
+      .select()
+      .single();
+
+    if (error) {
+      alert(`수정 실패: ${error.message}`);
+      return;
+    }
+
+    setParties((prev) =>
+      prev.map((item) => (item.id === party.id ? (data as Party) : item))
+    );
+
+    cancelEditParty();
   };
 
   const handleDeleteParty = async (party: Party) => {
@@ -587,18 +837,12 @@ export default function Home() {
       return;
     }
 
-    if (party.current_members >= party.max_members || party.status === "마감") {
-      alert("이미 마감된 파티야.");
-      return;
-    }
-
-    const partyApplications = applicationsByParty[party.id] || [];
-    const alreadyApplied = partyApplications.some(
-      (item) => item.nickname === currentNickname
-    );
-
-    if (alreadyApplied) {
-      alert("이미 신청한 파티야.");
+    if (
+      party.current_members >= party.max_members ||
+      party.status === "마감" ||
+      party.status === "종료"
+    ) {
+      alert("이미 신청할 수 없는 파티야.");
       return;
     }
 
@@ -619,8 +863,12 @@ export default function Home() {
     }
 
     const newCurrentMembers = party.current_members + 1;
-    const newStatus =
-      newCurrentMembers >= party.max_members ? "마감" : "모집중";
+    const newStatus = deriveStatus(
+      party.date,
+      party.time,
+      newCurrentMembers,
+      party.max_members
+    );
 
     const { error: updateError } = await supabase
       .from("parties")
@@ -690,8 +938,12 @@ export default function Home() {
     }
 
     const newCurrentMembers = Math.max(1, party.current_members - 1);
-    const newStatus =
-      newCurrentMembers >= party.max_members ? "마감" : "모집중";
+    const newStatus = deriveStatus(
+      party.date,
+      party.time,
+      newCurrentMembers,
+      party.max_members
+    );
 
     const { error: updateError } = await supabase
       .from("parties")
@@ -729,7 +981,7 @@ export default function Home() {
     }
 
     if (party.leader !== currentNickname) {
-      alert("파티장만 신청자를 강퇴할 수 있어.");
+      alert("파티장만 신청자를 제외할 수 있어.");
       return;
     }
 
@@ -755,8 +1007,12 @@ export default function Home() {
     }
 
     const newCurrentMembers = Math.max(1, party.current_members - 1);
-    const newStatus =
-      newCurrentMembers >= party.max_members ? "마감" : "모집중";
+    const newStatus = deriveStatus(
+      party.date,
+      party.time,
+      newCurrentMembers,
+      party.max_members
+    );
 
     const { error: updateError } = await supabase
       .from("parties")
@@ -785,6 +1041,50 @@ export default function Home() {
           : item
       )
     );
+  };
+
+  const handleApproveUser = async (targetId: string) => {
+    const { error } = await supabase
+      .from("users")
+      .update({ is_approved: true })
+      .eq("id", targetId);
+
+    if (error) {
+      alert(`승인 실패: ${error.message}`);
+      return;
+    }
+
+    setGuildUsers((prev) =>
+      prev.map((item) =>
+        item.id === targetId ? { ...item, is_approved: true } : item
+      )
+    );
+
+    if (profile?.id === targetId) {
+      setProfile((prev) => (prev ? { ...prev, is_approved: true } : prev));
+    }
+  };
+
+  const handleRevokeUser = async (targetId: string) => {
+    const { error } = await supabase
+      .from("users")
+      .update({ is_approved: false })
+      .eq("id", targetId);
+
+    if (error) {
+      alert(`승인취소 실패: ${error.message}`);
+      return;
+    }
+
+    setGuildUsers((prev) =>
+      prev.map((item) =>
+        item.id === targetId ? { ...item, is_approved: false } : item
+      )
+    );
+
+    if (profile?.id === targetId) {
+      setProfile((prev) => (prev ? { ...prev, is_approved: false } : prev));
+    }
   };
 
   if (!authReady || !profileReady) {
@@ -845,13 +1145,22 @@ export default function Home() {
                 placeholder="비밀번호"
                 className="w-full rounded-xl border border-zinc-300 px-4 py-3 outline-none"
               />
-              <button
-                onClick={handleLogin}
-                disabled={authLoading}
-                className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-              >
-                로그인
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={handleLogin}
+                  disabled={authLoading}
+                  className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  로그인
+                </button>
+                <button
+                  onClick={handleSendResetEmail}
+                  type="button"
+                  className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
+                >
+                  비밀번호 재설정 메일
+                </button>
+              </div>
             </div>
           ) : (
             <div className="mt-6 space-y-3">
@@ -908,10 +1217,52 @@ export default function Home() {
     );
   }
 
+  if (resetMode) {
+    return (
+      <main className="min-h-screen bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
+        <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
+          <h1 className="text-3xl font-bold">새 비밀번호 설정</h1>
+          <p className="mt-2 text-sm text-zinc-600">
+            새 비밀번호를 입력하고 저장해줘.
+          </p>
+
+          <div className="mt-6 space-y-3">
+            <input
+              value={resetPassword}
+              onChange={(e) => setResetPassword(e.target.value)}
+              type="password"
+              placeholder="새 비밀번호"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 outline-none"
+            />
+            <input
+              value={resetPasswordConfirm}
+              onChange={(e) => setResetPasswordConfirm(e.target.value)}
+              type="password"
+              placeholder="새 비밀번호 확인"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 outline-none"
+            />
+            <button
+              onClick={handleUpdatePassword}
+              className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+            >
+              비밀번호 변경
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (!isApproved && !isAdmin) {
     return (
       <main className="min-h-screen bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
+          {siteSettings?.notice_text?.trim() && (
+            <div className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {siteSettings.notice_text}
+            </div>
+          )}
+
           <h1 className="text-3xl font-bold">봄비 길드 보스 매칭</h1>
           <p className="mt-3 text-sm text-zinc-600">
             가입은 완료됐고, 지금은 관리자 승인 대기 상태야.
@@ -944,9 +1295,193 @@ export default function Home() {
     );
   }
 
+  const renderPartyCard = (party: Party) => {
+    const partyApplications = applicationsByParty[party.id] || [];
+    const memberNames = [
+      party.leader,
+      ...partyApplications.map((a) => a.nickname),
+    ];
+
+    const isLeader = currentNickname === party.leader;
+    const alreadyApplied = partyApplications.some(
+      (a) => a.nickname === currentNickname
+    );
+
+    return (
+      <div
+        key={party.id}
+        className="rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md"
+      >
+        <div className="mb-3 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold">{party.boss}</h3>
+            <p className="mt-1 text-sm text-zinc-500">파티장: {party.leader}</p>
+          </div>
+
+          <span
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+              party.status === "모집중"
+                ? "bg-green-100 text-green-700"
+                : party.status === "종료"
+                ? "bg-amber-100 text-amber-700"
+                : "bg-zinc-200 text-zinc-600"
+            }`}
+          >
+            {party.status}
+          </span>
+        </div>
+
+        <div className="space-y-2 text-sm text-zinc-700">
+          <p>날짜: {party.date}</p>
+          <p>시간: {formatTime(party.time)}</p>
+          <p>
+            인원: {party.current_members} / {party.max_members}
+          </p>
+          <p>조건: {party.condition || "없음"}</p>
+          <p>메모: {party.memo || "없음"}</p>
+        </div>
+
+        {editingPartyId === party.id ? (
+          <div className="mt-4 space-y-3 rounded-xl bg-zinc-50 p-4">
+            <input
+              value={editBoss}
+              onChange={(e) => setEditBoss(e.target.value)}
+              type="text"
+              placeholder="보스명"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none"
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                type="date"
+                className="rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none"
+              />
+              <select
+                value={editTime}
+                onChange={(e) => setEditTime(e.target.value)}
+                className="rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none"
+              >
+                <option value="">시간 선택</option>
+                {timeOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <input
+              value={editMaxMembers}
+              onChange={(e) => setEditMaxMembers(e.target.value)}
+              type="number"
+              placeholder="최대 인원"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none"
+            />
+            <input
+              value={editCondition}
+              onChange={(e) => setEditCondition(e.target.value)}
+              type="text"
+              placeholder="조건"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none"
+            />
+            <textarea
+              value={editMemo}
+              onChange={(e) => setEditMemo(e.target.value)}
+              rows={3}
+              placeholder="메모"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none"
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => handleSavePartyEdit(party)}
+                className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+              >
+                수정 저장
+              </button>
+              <button
+                onClick={cancelEditParty}
+                className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mt-4">
+              <p className="mb-2 text-sm font-semibold">신청자 목록</p>
+              <div className="flex flex-wrap gap-2">
+                {memberNames.map((name, index) => {
+                  const removable = isLeader && name !== party.leader;
+
+                  return (
+                    <div
+                      key={`${name}-${index}`}
+                      className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700"
+                    >
+                      <span>{name}</span>
+                      {removable && (
+                        <button
+                          onClick={() => handleKickMember(party, name)}
+                          className="ml-1 rounded-full px-1 text-[10px] font-bold text-red-500 hover:bg-red-50"
+                          title="강퇴"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => handleApply(party)}
+                disabled={isLeader || alreadyApplied || party.status === "종료"}
+                className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              >
+                신청하기
+              </button>
+              <button
+                onClick={() => handleCancelApply(party)}
+                disabled={isLeader || !alreadyApplied}
+                className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium disabled:opacity-40"
+              >
+                신청취소
+              </button>
+              {isLeader && (
+                <>
+                  <button
+                    onClick={() => startEditParty(party)}
+                    className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
+                  >
+                    모집글 수정
+                  </button>
+                  <button
+                    onClick={() => handleDeleteParty(party)}
+                    className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600"
+                  >
+                    모집글 삭제
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <main className="min-h-screen bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
       <div className="mx-auto max-w-6xl">
+        {siteSettings?.notice_text?.trim() && (
+          <div className="mb-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+            {siteSettings.notice_text}
+          </div>
+        )}
+
         <div className="mb-4 rounded-2xl bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -981,52 +1516,112 @@ export default function Home() {
         </div>
 
         {isAdmin && (
-          <div className="mb-4 rounded-2xl bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">관리자 승인 페이지</h2>
-                <p className="mt-1 text-sm text-zinc-600">
-                  가입 대기 유저를 승인하거나 승인취소할 수 있어.
-                </p>
-              </div>
+          <>
+            <div className="mb-4 rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-xl font-semibold">공지 배너</h2>
+              <p className="mt-1 text-sm text-zinc-600">
+                모든 유저 상단에 보여줄 공지를 입력할 수 있어.
+              </p>
 
-              <div className="flex gap-2">
+              <div className="mt-4 space-y-3">
+                <textarea
+                  value={noticeDraft}
+                  onChange={(e) => setNoticeDraft(e.target.value)}
+                  rows={3}
+                  placeholder="예: 가입 승인 문의는 길드 관리자에게 DM 주세요."
+                  className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none"
+                />
                 <button
-                  onClick={() => setAdminTab("pending")}
-                  className={`rounded-xl px-4 py-2 text-sm font-medium ${
-                    adminTab === "pending"
-                      ? "bg-black text-white"
-                      : "border border-zinc-300 bg-white"
-                  }`}
+                  onClick={handleSaveNotice}
+                  className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
                 >
-                  승인 대기 ({pendingUsers.length})
-                </button>
-                <button
-                  onClick={() => setAdminTab("approved")}
-                  className={`rounded-xl px-4 py-2 text-sm font-medium ${
-                    adminTab === "approved"
-                      ? "bg-black text-white"
-                      : "border border-zinc-300 bg-white"
-                  }`}
-                >
-                  승인 완료 ({approvedUsers.length})
+                  공지 저장
                 </button>
               </div>
             </div>
 
-            <div className="mt-4">
-              {adminLoading ? (
-                <div className="rounded-xl bg-zinc-50 p-4 text-sm">
-                  불러오는 중...
+            <div className="mb-4 rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold">관리자 승인 페이지</h2>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    가입 대기 유저를 승인하거나 승인취소할 수 있어.
+                  </p>
                 </div>
-              ) : adminTab === "pending" ? (
-                pendingUsers.length === 0 ? (
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAdminTab("pending")}
+                    className={`rounded-xl px-4 py-2 text-sm font-medium ${
+                      adminTab === "pending"
+                        ? "bg-black text-white"
+                        : "border border-zinc-300 bg-white"
+                    }`}
+                  >
+                    승인 대기 ({pendingUsers.length})
+                  </button>
+                  <button
+                    onClick={() => setAdminTab("approved")}
+                    className={`rounded-xl px-4 py-2 text-sm font-medium ${
+                      adminTab === "approved"
+                        ? "bg-black text-white"
+                        : "border border-zinc-300 bg-white"
+                    }`}
+                  >
+                    승인 완료 ({approvedUsers.length})
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                {adminLoading ? (
                   <div className="rounded-xl bg-zinc-50 p-4 text-sm">
-                    승인 대기 유저가 없어.
+                    불러오는 중...
+                  </div>
+                ) : adminTab === "pending" ? (
+                  pendingUsers.length === 0 ? (
+                    <div className="rounded-xl bg-zinc-50 p-4 text-sm">
+                      승인 대기 유저가 없어.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {pendingUsers.map((guildUser) => (
+                        <div
+                          key={guildUser.id}
+                          className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="text-sm">
+                            <p>
+                              <span className="font-semibold">닉네임:</span>{" "}
+                              {guildUser.nickname || "없음"}
+                            </p>
+                            <p>
+                              <span className="font-semibold">캐릭터명:</span>{" "}
+                              {guildUser.character_name || "없음"}
+                            </p>
+                            <p>
+                              <span className="font-semibold">직업:</span>{" "}
+                              {guildUser.job || "없음"}
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => handleApproveUser(guildUser.id)}
+                            className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+                          >
+                            승인하기
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : approvedUsers.length === 0 ? (
+                  <div className="rounded-xl bg-zinc-50 p-4 text-sm">
+                    승인 완료 유저가 없어.
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {pendingUsers.map((guildUser) => (
+                    {approvedUsers.map((guildUser) => (
                       <div
                         key={guildUser.id}
                         className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -1047,53 +1642,18 @@ export default function Home() {
                         </div>
 
                         <button
-                          onClick={() => handleApproveUser(guildUser.id)}
-                          className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+                          onClick={() => handleRevokeUser(guildUser.id)}
+                          className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
                         >
-                          승인하기
+                          승인취소
                         </button>
                       </div>
                     ))}
                   </div>
-                )
-              ) : approvedUsers.length === 0 ? (
-                <div className="rounded-xl bg-zinc-50 p-4 text-sm">
-                  승인 완료 유저가 없어.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {approvedUsers.map((guildUser) => (
-                    <div
-                      key={guildUser.id}
-                      className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="text-sm">
-                        <p>
-                          <span className="font-semibold">닉네임:</span>{" "}
-                          {guildUser.nickname || "없음"}
-                        </p>
-                        <p>
-                          <span className="font-semibold">캐릭터명:</span>{" "}
-                          {guildUser.character_name || "없음"}
-                        </p>
-                        <p>
-                          <span className="font-semibold">직업:</span>{" "}
-                          {guildUser.job || "없음"}
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={() => handleRevokeUser(guildUser.id)}
-                        className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
-                      >
-                        승인취소
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         <div className="mb-4 rounded-2xl bg-white p-5 shadow-sm sm:p-6">
@@ -1164,13 +1724,27 @@ export default function Home() {
         <div className="mb-4 rounded-2xl bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-xl font-semibold">필터 / 정렬</h2>
+              <h2 className="text-xl font-semibold">내 보기 / 필터 / 정렬</h2>
               <p className="mt-1 text-sm text-zinc-600">
-                보스, 상태, 정렬 기준으로 보기 쉽게 정리할 수 있어.
+                내 파티, 내 신청, 보스/상태 필터, 날짜 정렬이 가능해.
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <select
+                value={viewMode}
+                onChange={(e) =>
+                  setViewMode(
+                    e.target.value as "all" | "myParties" | "myApplications"
+                  )
+                }
+                className="rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none"
+              >
+                <option value="all">전체 보기</option>
+                <option value="myParties">내가 만든 파티</option>
+                <option value="myApplications">내 신청 목록</option>
+              </select>
+
               <select
                 value={bossFilter}
                 onChange={(e) => setBossFilter(e.target.value)}
@@ -1192,6 +1766,7 @@ export default function Home() {
                 <option value="all">전체 상태</option>
                 <option value="모집중">모집중</option>
                 <option value="마감">마감</option>
+                <option value="종료">종료</option>
               </select>
 
               <select
@@ -1208,131 +1783,48 @@ export default function Home() {
 
               <button
                 onClick={() => {
+                  setViewMode("all");
                   setBossFilter("all");
                   setStatusFilter("all");
                   setSortOption("latest");
                 }}
                 className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium"
               >
-                필터 초기화
+                초기화
               </button>
             </div>
           </div>
         </div>
 
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">현재 모집 중인 파티</h2>
-          <span className="text-sm text-zinc-500">총 {filteredParties.length}개</span>
+          <h2 className="text-xl font-semibold">현재 / 예정 파티</h2>
+          <span className="text-sm text-zinc-500">총 {activeParties.length}개</span>
         </div>
 
         {loading ? (
           <div className="rounded-2xl bg-white p-6 shadow-sm">불러오는 중...</div>
-        ) : filteredParties.length === 0 ? (
+        ) : activeParties.length === 0 ? (
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            조건에 맞는 모집글이 없어.
+            조건에 맞는 진행 중 파티가 없어.
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {filteredParties.map((party) => {
-              const partyApplications = applicationsByParty[party.id] || [];
-              const memberNames = [
-                party.leader,
-                ...partyApplications.map((a) => a.nickname),
-              ];
+            {activeParties.map(renderPartyCard)}
+          </div>
+        )}
 
-              const isLeader = currentNickname === party.leader;
-              const alreadyApplied = partyApplications.some(
-                (a) => a.nickname === currentNickname
-              );
+        <div className="mt-8 mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold">지난 일정</h2>
+          <span className="text-sm text-zinc-500">총 {pastParties.length}개</span>
+        </div>
 
-              return (
-                <div
-                  key={party.id}
-                  className="rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md"
-                >
-                  <div className="mb-3 flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-lg font-bold">{party.boss}</h3>
-                      <p className="mt-1 text-sm text-zinc-500">
-                        파티장: {party.leader}
-                      </p>
-                    </div>
-
-                    <span
-                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-                        party.status === "모집중"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-zinc-200 text-zinc-600"
-                      }`}
-                    >
-                      {party.status}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-zinc-700">
-                    <p>날짜: {party.date}</p>
-                    <p>시간: {formatTime(party.time)}</p>
-                    <p>
-                      인원: {party.current_members} / {party.max_members}
-                    </p>
-                    <p>조건: {party.condition || "없음"}</p>
-                    <p>메모: {party.memo || "없음"}</p>
-                  </div>
-
-                  <div className="mt-4">
-                    <p className="mb-2 text-sm font-semibold">신청자 목록</p>
-                    <div className="flex flex-wrap gap-2">
-                      {memberNames.map((name, index) => {
-                        const removable = isLeader && name !== party.leader;
-
-                        return (
-                          <div
-                            key={`${name}-${index}`}
-                            className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700"
-                          >
-                            <span>{name}</span>
-                            {removable && (
-                              <button
-                                onClick={() => handleKickMember(party, name)}
-                                className="ml-1 rounded-full px-1 text-[10px] font-bold text-red-500 hover:bg-red-50"
-                                title="강퇴"
-                              >
-                                ✕
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleApply(party)}
-                      disabled={isLeader || alreadyApplied}
-                      className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-                    >
-                      신청하기
-                    </button>
-                    <button
-                      onClick={() => handleCancelApply(party)}
-                      disabled={isLeader || !alreadyApplied}
-                      className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium disabled:opacity-40"
-                    >
-                      신청취소
-                    </button>
-                    {isLeader && (
-                      <button
-                        onClick={() => handleDeleteParty(party)}
-                        className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600"
-                      >
-                        모집글 삭제
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+        {pastParties.length === 0 ? (
+          <div className="rounded-2xl bg-white p-6 shadow-sm">
+            지난 일정이 없어.
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {pastParties.map(renderPartyCard)}
           </div>
         )}
       </div>
