@@ -50,6 +50,181 @@ type SiteSettings = {
 
 const ADMIN_EMAILS = ["c-tiger@naver.com"];
 
+function BlossomDecor() {
+  const leftPetals = [
+    { top: "12%", left: "34%", delay: "0s", duration: "12s", scale: 0.8 },
+    { top: "26%", left: "58%", delay: "2s", duration: "14s", scale: 1 },
+    { top: "44%", left: "28%", delay: "1.4s", duration: "13s", scale: 0.7 },
+    { top: "68%", left: "62%", delay: "3.1s", duration: "15s", scale: 0.9 },
+  ];
+
+  const rightPetals = [
+    { top: "16%", right: "38%", delay: "0.8s", duration: "13s", scale: 0.9 },
+    { top: "34%", right: "24%", delay: "2.8s", duration: "15s", scale: 0.75 },
+    { top: "52%", right: "56%", delay: "1.2s", duration: "12s", scale: 1 },
+    { top: "74%", right: "30%", delay: "3.5s", duration: "14s", scale: 0.8 },
+  ];
+
+  return (
+    <>
+      <div className="pointer-events-none fixed inset-y-0 left-0 z-0 hidden w-40 overflow-hidden xl:block">
+        <div className="absolute inset-0 bg-gradient-to-r from-pink-100/70 via-rose-50/20 to-transparent" />
+        <div className="absolute -left-10 top-0 h-full w-24 bg-pink-200/10 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-full opacity-70">
+          <svg
+            viewBox="0 0 220 900"
+            className="h-[92vh] w-full"
+            preserveAspectRatio="xMinYMax meet"
+          >
+            <path
+              d="M28 900 C48 780, 74 700, 88 610 C98 540, 92 470, 112 404 C130 344, 164 296, 170 230"
+              fill="none"
+              stroke="rgba(120,72,88,0.26)"
+              strokeWidth="10"
+              strokeLinecap="round"
+            />
+            <path
+              d="M92 560 C58 520, 42 490, 28 440"
+              fill="none"
+              stroke="rgba(120,72,88,0.2)"
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M108 470 C146 430, 176 388, 194 338"
+              fill="none"
+              stroke="rgba(120,72,88,0.2)"
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M84 690 C42 650, 26 622, 12 580"
+              fill="none"
+              stroke="rgba(120,72,88,0.18)"
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+
+        {leftPetals.map((petal, i) => (
+          <span
+            key={i}
+            className="sakura-petal absolute"
+            style={{
+              top: petal.top,
+              left: petal.left,
+              animationDelay: petal.delay,
+              animationDuration: petal.duration,
+              transform: `scale(${petal.scale})`,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="pointer-events-none fixed inset-y-0 right-0 z-0 hidden w-40 overflow-hidden xl:block">
+        <div className="absolute inset-0 bg-gradient-to-l from-pink-100/70 via-rose-50/20 to-transparent" />
+        <div className="absolute -right-10 top-0 h-full w-24 bg-pink-200/10 blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-full opacity-70">
+          <svg
+            viewBox="0 0 220 900"
+            className="h-[92vh] w-full"
+            preserveAspectRatio="xMaxYMax meet"
+          >
+            <path
+              d="M192 900 C172 780, 146 700, 132 610 C122 540, 128 470, 108 404 C90 344, 56 296, 50 230"
+              fill="none"
+              stroke="rgba(120,72,88,0.26)"
+              strokeWidth="10"
+              strokeLinecap="round"
+            />
+            <path
+              d="M128 560 C162 520, 178 490, 192 440"
+              fill="none"
+              stroke="rgba(120,72,88,0.2)"
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M112 470 C74 430, 44 388, 26 338"
+              fill="none"
+              stroke="rgba(120,72,88,0.2)"
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M136 690 C178 650, 194 622, 208 580"
+              fill="none"
+              stroke="rgba(120,72,88,0.18)"
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+
+        {rightPetals.map((petal, i) => (
+          <span
+            key={i}
+            className="sakura-petal absolute"
+            style={{
+              top: petal.top,
+              right: petal.right,
+              animationDelay: petal.delay,
+              animationDuration: petal.duration,
+              transform: `scale(${petal.scale})`,
+            }}
+          />
+        ))}
+      </div>
+
+      <style jsx global>{`
+        .sakura-petal {
+          width: 12px;
+          height: 18px;
+          border-radius: 70% 30% 65% 35%;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 248, 252, 0.96) 0%,
+            rgba(251, 207, 232, 0.92) 58%,
+            rgba(244, 114, 182, 0.68) 100%
+          );
+          box-shadow:
+            0 2px 10px rgba(244, 114, 182, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.55);
+          opacity: 0.75;
+          filter: blur(0.2px);
+          animation-name: sakuraDrift;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+        }
+
+        @keyframes sakuraDrift {
+          0% {
+            transform: translateY(0px) translateX(0px) rotate(-18deg);
+            opacity: 0.18;
+          }
+          25% {
+            transform: translateY(14px) translateX(6px) rotate(-4deg);
+            opacity: 0.72;
+          }
+          50% {
+            transform: translateY(28px) translateX(-3px) rotate(10deg);
+            opacity: 0.9;
+          }
+          75% {
+            transform: translateY(16px) translateX(8px) rotate(0deg);
+            opacity: 0.5;
+          }
+          100% {
+            transform: translateY(0px) translateX(0px) rotate(-18deg);
+            opacity: 0.18;
+          }
+        }
+      `}</style>
+    </>
+  );
+}
+
 export default function Home() {
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
     const hour = String(Math.floor(i / 2)).padStart(2, "0");
@@ -1296,16 +1471,18 @@ export default function Home() {
   }
 
   const renderPartyCard = (party: Party) => {
-    const partyApplications = applicationsByParty[party.id] || [];
-    const memberNames = [
-      party.leader,
-      ...partyApplications.map((a) => a.nickname),
-    ];
+const partyApplications = applicationsByParty[party.id] || [];
+const actualCurrentMembers = 1 + partyApplications.length;
+const memberNames = [
+  party.leader,
+  ...partyApplications.map((a) => a.nickname),
+];
 
-    const isLeader = currentNickname === party.leader;
-    const alreadyApplied = partyApplications.some(
-      (a) => a.nickname === currentNickname
-    );
+const isLeader = currentNickname === party.leader;
+const alreadyApplied = partyApplications.some(
+  (a) => a.nickname === currentNickname
+);
+const isFull = actualCurrentMembers >= party.max_members;
 
     return (
       <div
@@ -1335,7 +1512,7 @@ export default function Home() {
           <p>날짜: {party.date}</p>
           <p>시간: {formatTime(party.time)}</p>
           <p>
-            인원: {party.current_members} / {party.max_members}
+            인원: {actualCurrentMembers} / {party.max_members}
           </p>
           <p>조건: {party.condition || "없음"}</p>
           <p>메모: {party.memo || "없음"}</p>
@@ -1436,13 +1613,13 @@ export default function Home() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                onClick={() => handleApply(party)}
-                disabled={isLeader || alreadyApplied || party.status === "종료"}
-                className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-              >
-                신청하기
-              </button>
+<button
+  onClick={() => handleApply(party)}
+  disabled={isLeader || alreadyApplied || party.status === "종료" || isFull}
+  className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+>
+  신청하기
+</button>
               <button
                 onClick={() => handleCancelApply(party)}
                 disabled={isLeader || !alreadyApplied}
@@ -1473,9 +1650,10 @@ export default function Home() {
     );
   };
 
-  return (
-    <main className="min-h-screen bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
-      <div className="mx-auto max-w-6xl">
+return (
+  <main className="min-h-screen bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
+    <BlossomDecor />
+    <div className="relative z-10 mx-auto max-w-6xl">
         {siteSettings?.notice_text?.trim() && (
           <div className="mb-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
             {siteSettings.notice_text}
