@@ -1877,7 +1877,7 @@ return (
               value={condition}
               onChange={(e) => setCondition(e.target.value)}
               type="text"
-              placeholder="조건 (예: 환산 500000이상 / 비율 35% 이상)"
+              placeholder="조건 (예: 환산 5만이상 / 배율 45% 이상)"
               className="rounded-xl border border-zinc-300 px-4 py-3 outline-none md:col-span-2"
             />
             <textarea
