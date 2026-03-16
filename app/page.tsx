@@ -16,12 +16,22 @@ type Party = {
   condition: string | null;
   memo: string | null;
   created_at: string;
+  manual_closed: boolean;
 };
 
 type Application = {
   id: number;
   party_id: number;
   nickname: string;
+  job: string | null;
+  created_at: string;
+};
+
+type PartyComment = {
+  id: number;
+  party_id: number;
+  nickname: string;
+  content: string;
   created_at: string;
 };
 
@@ -246,9 +256,11 @@ export default function Home() {
     dateValue: string,
     timeValue: string,
     currentMembers: number,
-    maxMembers: number
+    maxMembers: number,
+    manualClosed = false
   ) => {
     if (isPastByValues(dateValue, timeValue)) return "종료";
+    if (manualClosed) return "마감";
     return currentMembers >= maxMembers ? "마감" : "모집중";
   };
 
@@ -260,6 +272,7 @@ export default function Home() {
 
   const [parties, setParties] = useState<Party[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [comments, setComments] = useState<PartyComment[]>([]);
   const [guildUsers, setGuildUsers] = useState<GuildUser[]>([]);
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
 
@@ -311,19 +324,21 @@ export default function Home() {
   const [resetPassword, setResetPassword] = useState("");
   const [resetPasswordConfirm, setResetPasswordConfirm] = useState("");
 
+  const [commentInputs, setCommentInputs] = useState<Record<number, string>>({});
+
   const currentNickname =
     profile?.nickname ||
-    (user?.user_metadata?.nickname as string | undefined) ||
+    ((user?.user_metadata?.nickname as string | undefined) ?? "") ||
     user?.email?.split("@")[0] ||
     "";
 
   const currentCharacterName =
     profile?.character_name ||
-    (user?.user_metadata?.character_name as string | undefined) ||
+    ((user?.user_metadata?.character_name as string | undefined) ?? "") ||
     "";
 
   const currentJob =
-    profile?.job || (user?.user_metadata?.job as string | undefined) || "";
+    profile?.job || ((user?.user_metadata?.job as string | undefined) ?? "") || "";
 
   const isAdmin = ADMIN_EMAILS.includes((user?.email || "").toLowerCase());
   const isApproved = isAdmin || profile?.is_approved === true;
@@ -340,6 +355,19 @@ export default function Home() {
 
     return grouped;
   }, [applications]);
+
+  const commentsByParty = useMemo(() => {
+    const grouped: Record<number, PartyComment[]> = {};
+
+    for (const comment of comments) {
+      if (!grouped[comment.party_id]) {
+        grouped[comment.party_id] = [];
+      }
+      grouped[comment.party_id].push(comment);
+    }
+
+    return grouped;
+  }, [comments]);
 
   const bossOptions = useMemo(() => {
     return Array.from(new Set(parties.map((party) => party.boss))).sort();
@@ -398,16 +426,12 @@ export default function Home() {
   ]);
 
   const activeParties = useMemo(
-    () =>
-      filteredParties.filter(
-        (party) => !isPastByValues(party.date, party.time)
-      ),
+    () => filteredParties.filter((party) => !isPastByValues(party.date, party.time)),
     [filteredParties]
   );
 
   const pastParties = useMemo(
-    () =>
-      filteredParties.filter((party) => isPastByValues(party.date, party.time)),
+    () => filteredParties.filter((party) => isPastByValues(party.date, party.time)),
     [filteredParties]
   );
 
@@ -453,11 +477,12 @@ export default function Home() {
   const loadMainData = async () => {
     setLoading(true);
 
-    const [partiesResult, applicationsResult, settingsResult] =
+    const [partiesResult, applicationsResult, settingsResult, commentsResult] =
       await Promise.allSettled([
         supabase.from("parties").select("*").order("id", { ascending: false }),
         supabase.from("applications").select("*").order("id", { ascending: true }),
         supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
+        supabase.from("party_comments").select("*").order("created_at", { ascending: true }),
       ]);
 
     if (partiesResult.status === "fulfilled") {
@@ -468,11 +493,13 @@ export default function Home() {
         const rawParties = (partiesResult.value.data || []) as Party[];
         const normalized = rawParties.map((party) => ({
           ...party,
+          manual_closed: party.manual_closed ?? false,
           status: deriveStatus(
             party.date,
             party.time,
             party.current_members,
-            party.max_members
+            party.max_members,
+            party.manual_closed ?? false
           ),
         }));
 
@@ -503,7 +530,7 @@ export default function Home() {
         console.error("신청자 불러오기 실패:", applicationsResult.value.error);
         setApplications([]);
       } else {
-        setApplications(applicationsResult.value.data || []);
+        setApplications((applicationsResult.value.data || []) as Application[]);
       }
     } else {
       console.error("신청자 불러오기 실패:", applicationsResult.reason);
@@ -523,6 +550,18 @@ export default function Home() {
       console.error("공지 불러오기 실패:", settingsResult.reason);
       setSiteSettings(null);
       setNoticeDraft("");
+    }
+
+    if (commentsResult.status === "fulfilled") {
+      if (commentsResult.value.error) {
+        console.error("댓글 불러오기 실패:", commentsResult.value.error);
+        setComments([]);
+      } else {
+        setComments((commentsResult.value.data || []) as PartyComment[]);
+      }
+    } else {
+      console.error("댓글 불러오기 실패:", commentsResult.reason);
+      setComments([]);
     }
 
     setLoading(false);
@@ -650,6 +689,7 @@ export default function Home() {
         setProfileReady(true);
         setParties([]);
         setApplications([]);
+        setComments([]);
         setLoading(false);
       }
     });
@@ -866,7 +906,7 @@ export default function Home() {
     }
 
     const timeToSave = `${time}:00`;
-    const statusToSave = deriveStatus(date, timeToSave, 1, max);
+    const statusToSave = deriveStatus(date, timeToSave, 1, max, false);
 
     const { data, error } = await supabase
       .from("parties")
@@ -881,6 +921,7 @@ export default function Home() {
           status: statusToSave,
           condition,
           memo,
+          manual_closed: false,
         },
       ])
       .select()
@@ -929,9 +970,10 @@ export default function Home() {
       return;
     }
 
+    const actualCurrentMembers = 1 + ((applicationsByParty[party.id] || []).length ?? 0);
     const nextMax = Number(editMaxMembers);
 
-    if (nextMax < party.current_members) {
+    if (nextMax < actualCurrentMembers) {
       alert("최대 인원은 현재 인원보다 작을 수 없어.");
       return;
     }
@@ -940,8 +982,9 @@ export default function Home() {
     const nextStatus = deriveStatus(
       editDate,
       editTimeToSave,
-      party.current_members,
-      nextMax
+      actualCurrentMembers,
+      nextMax,
+      party.manual_closed
     );
 
     const { data, error } = await supabase
@@ -951,6 +994,7 @@ export default function Home() {
         date: editDate,
         time: editTimeToSave,
         max_members: nextMax,
+        current_members: actualCurrentMembers,
         condition: editCondition,
         memo: editMemo,
         status: nextStatus,
@@ -969,6 +1013,43 @@ export default function Home() {
     );
 
     cancelEditParty();
+  };
+
+  const handleToggleManualClose = async (party: Party) => {
+    if (party.status === "종료") {
+      alert("지난 일정은 다시 열 수 없어.");
+      return;
+    }
+
+    const actualCurrentMembers = 1 + ((applicationsByParty[party.id] || []).length ?? 0);
+    const nextManualClosed = !party.manual_closed;
+    const nextStatus = deriveStatus(
+      party.date,
+      party.time,
+      actualCurrentMembers,
+      party.max_members,
+      nextManualClosed
+    );
+
+    const { data, error } = await supabase
+      .from("parties")
+      .update({
+        manual_closed: nextManualClosed,
+        current_members: actualCurrentMembers,
+        status: nextStatus,
+      })
+      .eq("id", party.id)
+      .select()
+      .single();
+
+    if (error) {
+      alert(`마감 상태 변경 실패: ${error.message}`);
+      return;
+    }
+
+    setParties((prev) =>
+      prev.map((item) => (item.id === party.id ? (data as Party) : item))
+    );
   };
 
   const handleDeleteParty = async (party: Party) => {
@@ -994,6 +1075,7 @@ export default function Home() {
 
     setParties((prev) => prev.filter((item) => item.id !== party.id));
     setApplications((prev) => prev.filter((item) => item.party_id !== party.id));
+    setComments((prev) => prev.filter((item) => item.party_id !== party.id));
   };
 
   const handleApply = async (party: Party) => {
@@ -1012,8 +1094,10 @@ export default function Home() {
       return;
     }
 
+    const currentCount = 1 + ((applicationsByParty[party.id] || []).length ?? 0);
+
     if (
-      party.current_members >= party.max_members ||
+      currentCount >= party.max_members ||
       party.status === "마감" ||
       party.status === "종료"
     ) {
@@ -1027,6 +1111,7 @@ export default function Home() {
         {
           party_id: party.id,
           nickname: currentNickname,
+          job: currentJob || null,
         },
       ])
       .select()
@@ -1037,12 +1122,13 @@ export default function Home() {
       return;
     }
 
-    const newCurrentMembers = party.current_members + 1;
+    const newCurrentMembers = currentCount + 1;
     const newStatus = deriveStatus(
       party.date,
       party.time,
       newCurrentMembers,
-      party.max_members
+      party.max_members,
+      party.manual_closed
     );
 
     const { error: updateError } = await supabase
@@ -1112,12 +1198,14 @@ export default function Home() {
       return;
     }
 
-    const newCurrentMembers = Math.max(1, party.current_members - 1);
+    const currentCount = 1 + partyApplications.length;
+    const newCurrentMembers = Math.max(1, currentCount - 1);
     const newStatus = deriveStatus(
       party.date,
       party.time,
       newCurrentMembers,
-      party.max_members
+      party.max_members,
+      party.manual_closed
     );
 
     const { error: updateError } = await supabase
@@ -1149,7 +1237,7 @@ export default function Home() {
     );
   };
 
-  const handleKickMember = async (party: Party, nickname: string) => {
+  const handleKickMember = async (party: Party, application: Application) => {
     if (!isApproved) {
       alert("관리자 승인 후 사용할 수 있어.");
       return;
@@ -1160,33 +1248,27 @@ export default function Home() {
       return;
     }
 
-    const partyApplications = applicationsByParty[party.id] || [];
-    const target = partyApplications.find((item) => item.nickname === nickname);
-
-    if (!target) {
-      alert("해당 신청자를 찾지 못했어.");
-      return;
-    }
-
-    const ok = confirm(`${nickname} 님을 파티에서 제외할까?`);
+    const ok = confirm(`${application.nickname} 님을 파티에서 제외할까?`);
     if (!ok) return;
 
     const { error: deleteError } = await supabase
       .from("applications")
       .delete()
-      .eq("id", target.id);
+      .eq("id", application.id);
 
     if (deleteError) {
       alert(`강퇴 실패: ${deleteError.message}`);
       return;
     }
 
-    const newCurrentMembers = Math.max(1, party.current_members - 1);
+    const currentCount = 1 + ((applicationsByParty[party.id] || []).length ?? 0);
+    const newCurrentMembers = Math.max(1, currentCount - 1);
     const newStatus = deriveStatus(
       party.date,
       party.time,
       newCurrentMembers,
-      party.max_members
+      party.max_members,
+      party.manual_closed
     );
 
     const { error: updateError } = await supabase
@@ -1203,7 +1285,7 @@ export default function Home() {
       return;
     }
 
-    setApplications((prev) => prev.filter((item) => item.id !== target.id));
+    setApplications((prev) => prev.filter((item) => item.id !== application.id));
 
     setParties((prev) =>
       prev.map((item) =>
@@ -1216,6 +1298,50 @@ export default function Home() {
           : item
       )
     );
+  };
+
+  const handleAddComment = async (partyId: number) => {
+    const raw = commentInputs[partyId] || "";
+    const content = raw.trim();
+
+    if (!content) {
+      alert("댓글 내용을 입력해줘.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("party_comments")
+      .insert([
+        {
+          party_id: partyId,
+          nickname: currentNickname,
+          content,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      alert(`댓글 등록 실패: ${error.message}`);
+      return;
+    }
+
+    setComments((prev) => [...prev, data as PartyComment]);
+    setCommentInputs((prev) => ({ ...prev, [partyId]: "" }));
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    const { error } = await supabase
+      .from("party_comments")
+      .delete()
+      .eq("id", commentId);
+
+    if (error) {
+      alert(`댓글 삭제 실패: ${error.message}`);
+      return;
+    }
+
+    setComments((prev) => prev.filter((comment) => comment.id !== commentId));
   };
 
   const handleApproveUser = async (targetId: string) => {
@@ -1264,7 +1390,7 @@ export default function Home() {
 
   if (!authReady || !profileReady) {
     return (
-      <main className="min-h-screen bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
+      <main className="min-h-screen overflow-x-hidden bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
           불러오는 중...
         </div>
@@ -1274,7 +1400,7 @@ export default function Home() {
 
   if (!session) {
     return (
-      <main className="min-h-screen bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
+      <main className="min-h-screen overflow-x-hidden bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
           <h1 className="text-3xl font-bold">봄비 길드 보스 매칭</h1>
           <p className="mt-2 text-sm text-zinc-600">
@@ -1394,7 +1520,7 @@ export default function Home() {
 
   if (resetMode) {
     return (
-      <main className="min-h-screen bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
+      <main className="min-h-screen overflow-x-hidden bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
           <h1 className="text-3xl font-bold">새 비밀번호 설정</h1>
           <p className="mt-2 text-sm text-zinc-600">
@@ -1430,7 +1556,7 @@ export default function Home() {
 
   if (!isApproved && !isAdmin) {
     return (
-      <main className="min-h-screen bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
+      <main className="min-h-screen overflow-x-hidden bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
           {siteSettings?.notice_text?.trim() && (
             <div className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -1471,18 +1597,14 @@ export default function Home() {
   }
 
   const renderPartyCard = (party: Party) => {
-const partyApplications = applicationsByParty[party.id] || [];
-const actualCurrentMembers = 1 + partyApplications.length;
-const memberNames = [
-  party.leader,
-  ...partyApplications.map((a) => a.nickname),
-];
-
-const isLeader = currentNickname === party.leader;
-const alreadyApplied = partyApplications.some(
-  (a) => a.nickname === currentNickname
-);
-const isFull = actualCurrentMembers >= party.max_members;
+    const partyApplications = applicationsByParty[party.id] || [];
+    const partyComments = commentsByParty[party.id] || [];
+    const actualCurrentMembers = 1 + partyApplications.length;
+    const isLeader = currentNickname === party.leader;
+    const alreadyApplied = partyApplications.some(
+      (a) => a.nickname === currentNickname
+    );
+    const isFull = actualCurrentMembers >= party.max_members;
 
     return (
       <div
@@ -1583,77 +1705,148 @@ const isFull = actualCurrentMembers >= party.max_members;
               </button>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="mt-4">
-              <p className="mb-2 text-sm font-semibold">신청자 목록</p>
-              <div className="flex flex-wrap gap-2">
-                {memberNames.map((name, index) => {
-                  const removable = isLeader && name !== party.leader;
+        ) : null}
 
-                  return (
-                    <div
-                      key={`${name}-${index}`}
-                      className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700"
-                    >
-                      <span>{name}</span>
-                      {removable && (
-                        <button
-                          onClick={() => handleKickMember(party, name)}
-                          className="ml-1 rounded-full px-1 text-[10px] font-bold text-red-500 hover:bg-red-50"
-                          title="강퇴"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+        <div className="mt-4">
+          <p className="mb-2 text-sm font-semibold">신청자 목록</p>
+
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700">
+              {party.leader} · 파티장
+            </span>
+
+            {partyApplications.map((application) => (
+              <div
+                key={application.id}
+                className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700"
+              >
+                <span>
+                  {application.nickname}
+                  {application.job ? ` · ${application.job}` : ""}
+                </span>
+
+                {isLeader && (
+                  <button
+                    onClick={() => handleKickMember(party, application)}
+                    className="ml-1 rounded-full px-1 text-[10px] font-bold text-red-500 hover:bg-red-50"
+                    title="강퇴"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-<button
-  onClick={() => handleApply(party)}
-  disabled={isLeader || alreadyApplied || party.status === "종료" || isFull}
-  className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
->
-  신청하기
-</button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            onClick={() => handleApply(party)}
+            disabled={isLeader || alreadyApplied || party.status === "종료" || isFull}
+            className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          >
+            신청하기
+          </button>
+
+          <button
+            onClick={() => handleCancelApply(party)}
+            disabled={isLeader || !alreadyApplied}
+            className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium disabled:opacity-40"
+          >
+            신청취소
+          </button>
+
+          {isLeader && (
+            <>
               <button
-                onClick={() => handleCancelApply(party)}
-                disabled={isLeader || !alreadyApplied}
+                onClick={() => handleToggleManualClose(party)}
+                disabled={party.status === "종료"}
                 className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium disabled:opacity-40"
               >
-                신청취소
+                {party.manual_closed ? "모집 재개" : "모집 마감"}
               </button>
-              {isLeader && (
-                <>
-                  <button
-                    onClick={() => startEditParty(party)}
-                    className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
+
+              <button
+                onClick={() => startEditParty(party)}
+                className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
+              >
+                모집글 수정
+              </button>
+
+              <button
+                onClick={() => handleDeleteParty(party)}
+                className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600"
+              >
+                모집글 삭제
+              </button>
+            </>
+          )}
+        </div>
+
+        <div className="mt-5 rounded-xl bg-zinc-50 p-4">
+          <p className="mb-3 text-sm font-semibold">문의 / 댓글</p>
+
+          <div className="space-y-2">
+            {partyComments.length === 0 ? (
+              <p className="text-sm text-zinc-500">아직 댓글이 없어.</p>
+            ) : (
+              partyComments.map((comment) => {
+                const canDeleteComment =
+                  comment.nickname === currentNickname || isLeader || isAdmin;
+
+                return (
+                  <div
+                    key={comment.id}
+                    className="flex items-start justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm"
                   >
-                    모집글 수정
-                  </button>
-                  <button
-                    onClick={() => handleDeleteParty(party)}
-                    className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600"
-                  >
-                    모집글 삭제
-                  </button>
-                </>
-              )}
-            </div>
-          </>
-        )}
+                    <div>
+                      <p className="font-medium">{comment.nickname}</p>
+                      <p className="text-zinc-700">{comment.content}</p>
+                    </div>
+
+                    {canDeleteComment && (
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="rounded-lg px-2 py-1 text-xs text-red-500 hover:bg-red-50"
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              value={commentInputs[party.id] || ""}
+              onChange={(e) =>
+                setCommentInputs((prev) => ({
+                  ...prev,
+                  [party.id]: e.target.value,
+                }))
+              }
+              type="text"
+              placeholder="문의나 댓글을 남겨줘"
+              className="flex-1 rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none"
+            />
+            <button
+              onClick={() => handleAddComment(party.id)}
+              className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+            >
+              댓글 등록
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
 
-return (
-  <main className="min-h-screen bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
-    <BlossomDecor />
-    <div className="relative z-10 mx-auto max-w-6xl">
+  return (
+    <main className="min-h-screen overflow-x-hidden bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
+      <BlossomDecor />
+      <div className="relative z-10 mx-auto max-w-6xl">
         {siteSettings?.notice_text?.trim() && (
           <div className="mb-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
             {siteSettings.notice_text}
@@ -1877,7 +2070,7 @@ return (
               value={condition}
               onChange={(e) => setCondition(e.target.value)}
               type="text"
-              placeholder="조건 (예: 환산 5만이상 / 배율 45% 이상)"
+              placeholder="조건 (예: 환산 500000이상 / 비율 35% 이상)"
               className="rounded-xl border border-zinc-300 px-4 py-3 outline-none md:col-span-2"
             />
             <textarea
@@ -1997,9 +2190,7 @@ return (
         </div>
 
         {pastParties.length === 0 ? (
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            지난 일정이 없어.
-          </div>
+          <div className="rounded-2xl bg-white p-6 shadow-sm">지난 일정이 없어.</div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {pastParties.map(renderPartyCard)}
