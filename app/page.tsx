@@ -236,6 +236,25 @@ function BlossomDecor() {
 }
 
 export default function Home() {
+const sendDiscordAlert = async (
+  title: string,
+  description: string,
+  url?: string
+) => {
+  try {
+await fetch("/api/discord", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title, description, url }),
+    });
+
+  } catch (error) {
+    console.error("디스코드 알림 실패:", error);
+  }
+};
+
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
     const hour = String(Math.floor(i / 2)).padStart(2, "0");
     const minute = i % 2 === 0 ? "00" : "30";
@@ -942,6 +961,23 @@ export default function Home() {
     if (data) {
       setParties((prev) => [data as Party, ...prev]);
     }
+    const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (typeof window !== "undefined" ? window.location.origin : "");
+
+await sendDiscordAlert(
+  "📢 새 모집글 등록",
+  [
+    `보스: ${boss}`,
+    `파티장: ${currentNickname}`,
+    `날짜: ${date}`,
+    `시간: ${time}`,
+    `인원: 1 / ${max}`,
+    `조건: ${condition || "없음"}`,
+    `메모: ${memo || "없음"}`,
+  ].join("\n"),
+  siteUrl
+);
   };
 
   const startEditParty = (party: Party) => {
@@ -1050,6 +1086,23 @@ export default function Home() {
     setParties((prev) =>
       prev.map((item) => (item.id === party.id ? (data as Party) : item))
     );
+if (nextManualClosed) {
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+
+  await sendDiscordAlert(
+    "🔒 모집 마감",
+    [
+      `보스: ${party.boss}`,
+      `파티장: ${party.leader}`,
+      `날짜: ${party.date}`,
+      `시간: ${formatTime(party.time)}`,
+      `현재 인원: ${actualCurrentMembers} / ${party.max_members}`,
+    ].join("\n"),
+    siteUrl
+  );
+}
   };
 
   const handleDeleteParty = async (party: Party) => {
@@ -2070,7 +2123,7 @@ export default function Home() {
               value={condition}
               onChange={(e) => setCondition(e.target.value)}
               type="text"
-              placeholder="조건 (예: 환산 500000이상 / 비율 35% 이상)"
+              placeholder="조건 (예: 환산 5만이상 / 배율 35% 이상)"
               className="rounded-xl border border-zinc-300 px-4 py-3 outline-none md:col-span-2"
             />
             <textarea
