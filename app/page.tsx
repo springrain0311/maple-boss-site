@@ -41,6 +41,7 @@ type Profile = {
   character_name: string;
   job: string;
   is_approved: boolean;
+  level?: number;
 };
 
 type GuildUser = {
@@ -50,6 +51,7 @@ type GuildUser = {
   job: string;
   is_approved: boolean;
   created_at?: string | null;
+  level?: number;
 };
 
 type SiteSettings = {
@@ -669,12 +671,13 @@ const characterImage = `https://avatar.maplestory.nexon.com/Character/${encodeUR
       email: signupEmail,
       password: signupPassword,
       options: {
-        data: {
-          nickname: signupNickname,
-          character_name: signupCharacterName,
-          job: mapleData.character_class,
-        },
-      },
+  data: {
+    nickname: signupNickname,
+    character_name: signupCharacterName,
+    job: mapleData.character_class,
+    level: mapleData.character_level,
+  },
+},
     });
 
     if (error) {
@@ -687,12 +690,13 @@ const characterImage = `https://avatar.maplestory.nexon.com/Character/${encodeUR
       const { error: profileError } = await supabase.from("users").upsert(
         [
           {
-            id: data.user.id,
-            nickname: signupNickname,
-            character_name: signupCharacterName,
-            job: mapleData.character_class,
-            is_approved: false,
-          },
+  id: data.user.id,
+  nickname: signupNickname,
+  character_name: signupCharacterName,
+  job: mapleData.character_class,
+  level: mapleData.character_level,
+  is_approved: false,
+},
         ],
         { onConflict: "id" }
       );
@@ -1797,6 +1801,9 @@ if (nextManualClosed) {
                 <p>
                   <span className="font-semibold">직업:</span> {currentJob || "없음"}
                 </p>
+                <p>
+  <span className="font-semibold">레벨:</span> {profile?.level || "없음"}
+</p>
               </div>
 
               <button
