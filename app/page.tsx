@@ -40,10 +40,10 @@ type Profile = {
   nickname: string;
   character_name: string;
   job: string;
-  is_approved: boolean;
-  level?: number;
   world?: string;
-character_image?: string;
+  character_image?: string;
+  level?: number;
+  is_approved: boolean;
 };
 
 type GuildUser = {
@@ -1501,28 +1501,30 @@ if (nextManualClosed) {
             가입은 완료됐고, 지금은 관리자 승인 대기 상태야.
           </p>
 
-          <div className="mt-6 rounded-xl bg-zinc-50 p-4 text-sm">
-            <p>
-              <span className="font-semibold">닉네임:</span> {currentNickname}
-            </p>
-            <p>
-              <span className="font-semibold">캐릭터명:</span>{" "}
-              {currentCharacterName || "없음"}
-            </p>
-            <p>
-              <span className="font-semibold">직업:</span> {currentJob || "없음"}
-            </p>
-            <p className="mt-3 text-zinc-500">길드 관리자에게 승인 요청해줘.</p>
-          </div>
+          <div className="mt-6 rounded-2xl bg-zinc-50 p-4 text-sm shadow-sm">
+  <p className="font-bold text-base">{currentNickname}</p>
 
-          <div className="mt-6">
-            <button
-              onClick={handleLogout}
-              className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
-            >
-              로그아웃
-            </button>
-          </div>
+  <p className="text-zinc-600 mt-1">
+    {currentCharacterName || "캐릭터 없음"}
+  </p>
+
+  <p className="text-zinc-500 text-xs mt-1">
+    Lv.{profile?.level || "?"} · {currentJob || "직업 없음"}
+  </p>
+
+  <p className="mt-3 text-zinc-500">
+    길드 관리자에게 승인 요청해줘.
+  </p>
+</div>
+
+<div className="mt-6">
+  <button
+    onClick={handleLogout}
+    className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
+  >
+    로그아웃
+  </button>
+</div>
         </div>
       </main>
     );
