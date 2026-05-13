@@ -632,22 +632,22 @@ await fetch("/api/discord", {
 
   const handleSignup = async () => {
     if (
-      !signupEmail ||
-      !signupPassword ||
-      !signupNickname ||
-      !signupCharacterName ||
-      !signupJob
-    )
+  !signupEmail ||
+  !signupPassword ||
+  !signupNickname ||
+  !signupCharacterName ||
+  !signupJob
+) {
+  alert("회원가입 항목을 전부 입력해줘.");
+  return;
+}
+
 const mapleData = await fetchCharacterInfo(signupCharacterName);
 
 if (!mapleData) {
   alert("존재하지 않는 메이플 캐릭터야.");
   return;
 }
- {
-      alert("회원가입 항목을 전부 입력해줘.");
-      return;
-    }
 
     const { data: existingNickname } = await supabase
       .from("users")
