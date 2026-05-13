@@ -39,6 +39,7 @@ type SewerRank = {
   rank: number;
   nickname: string;
   score: number;
+  character_image?: string;
 };
 
 type Profile = {
@@ -1896,17 +1897,28 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="w-6 text-center font-bold">
-              {item.rank === 1
-                ? "🥇"
-                : item.rank === 2
-                ? "🥈"
-                : item.rank === 3
-                ? "🥉"
-                : item.rank}
-            </span>
-            <span className="font-medium">{item.nickname}</span>
-          </div>
+  {item.rank <= 3 && item.character_image ? (
+    <div className="h-10 w-10 overflow-hidden rounded-xl flex items-center justify-center">
+      <img
+        src={item.character_image}
+        alt={item.nickname}
+        className="scale-[2.4] -translate-y-1"
+      />
+    </div>
+  ) : (
+    <span className="w-6 text-center font-bold">
+      {item.rank === 1
+        ? "🥇"
+        : item.rank === 2
+        ? "🥈"
+        : item.rank === 3
+        ? "🥉"
+        : item.rank}
+    </span>
+  )}
+
+  <span className="font-medium">{item.nickname}</span>
+</div>
 
           <span className="text-xs text-zinc-500">
             {item.score.toLocaleString()}
