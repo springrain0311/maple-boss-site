@@ -1856,15 +1856,17 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
 
   <div className="rounded-2xl bg-zinc-50 p-4 text-sm shadow-sm min-w-[220px]">
   <div className="flex items-center gap-3">
-    {profile?.character_image && (
+  {profile?.character_image && (
+    <div className="h-20 w-20 overflow-hidden rounded-xl bg-white flex items-center justify-center">
       <img
         src={profile.character_image}
         alt={currentCharacterName || "캐릭터"}
-        className="h-20 w-20 rounded-xl object-cover scale-125"
+        className="scale-[3.0]"
       />
-    )}
+    </div>
+  )}
 
-    <div>
+  <div>
       <p className="font-bold text-base">{currentNickname}</p>
 
       <p className="text-zinc-600">
