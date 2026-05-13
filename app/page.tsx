@@ -326,7 +326,7 @@ await fetch("/api/discord", {
 
     const { data, error } = await supabase
       .from("users")
-      .select("id, nickname, character_name, job, level, world, character_image, is_approved")
+      .select("id, nickname, character_name, job, level, world, character_image, is_approved, created_at")
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -1589,14 +1589,17 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
 
   const renderPartyCard = (party: Party) => {
     const partyApplications = applicationsByParty[party.id] || [];
-    const partyComments = commentsByParty[party.id] || [];
+  const partyComments = commentsByParty[party.id] || [];
     const actualCurrentMembers = 1 + partyApplications.length;
     const isLeader = currentNickname === party.leader;
     const alreadyApplied = partyApplications.some(
       (a) => a.nickname === currentNickname
     );
     const isFull = actualCurrentMembers >= party.max_members;
-
+const partyApplications = applicationsByParty[party.id] || [];
+    const leaderProfile = guildUsers.find(
+  (guildUser) => guildUser.nickname === party.leader
+);
     return (
       <div
         key={party.id}
@@ -1605,7 +1608,6 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
         <div className="mb-3 flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold">{party.boss}</h3>
-            <p className="mt-1 text-sm text-zinc-500">파티장: {party.leader}</p>
           </div>
 
           <span
@@ -1621,15 +1623,35 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
           </span>
         </div>
 
-        <div className="space-y-2 text-sm text-zinc-700">
-          <p>날짜: {party.date}</p>
-          <p>시간: {formatTime(party.time)}</p>
-          <p>
-            인원: {actualCurrentMembers} / {party.max_members}
-          </p>
-          <p>조건: {party.condition || "없음"}</p>
-          <p>메모: {party.memo || "없음"}</p>
-        </div>
+        <div className="mt-3 grid gap-4 lg:grid-cols-[1fr_140px]">
+  <div className="space-y-2 text-sm text-zinc-700">
+    <p>날짜: {party.date}</p>
+    <p>시간: {formatTime(party.time)}</p>
+    <p>
+      인원: {actualCurrentMembers} / {party.max_members}
+    </p>
+    <p>조건: {party.condition || "없음"}</p>
+    <p>메모: {party.memo || "없음"}</p>
+  </div>
+
+  <div className="flex flex-col items-center justify-start">
+    <div className="h-32 w-32 overflow-hidden rounded-2xl bg-zinc-50 flex items-center justify-center">
+      {leaderProfile?.character_image ? (
+        <img
+          src={leaderProfile.character_image}
+          alt={party.leader}
+          className="scale-[3.2] -translate-y-1"
+        />
+      ) : (
+        <div className="text-xs text-zinc-400">이미지 없음</div>
+      )}
+    </div>
+
+    <p className="mt-3 text-sm text-zinc-700">
+      파티장: <span className="font-semibold">{party.leader}</span>
+    </p>
+  </div>
+</div>
 
         {editingPartyId === party.id ? (
           <div className="mt-4 space-y-3 rounded-xl bg-zinc-50 p-4">
@@ -1702,9 +1724,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
           <p className="mb-2 text-sm font-semibold">신청자 목록</p>
 
           <div className="flex flex-wrap gap-2">
-            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700">
-              {party.leader} · 파티장
-            </span>
+
 
             {partyApplications.map((application) => (
               <div
