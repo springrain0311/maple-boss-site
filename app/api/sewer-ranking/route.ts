@@ -57,7 +57,11 @@ export async function GET() {
 
           return {
             ...row,
-            character_image: mapleData.character_image || "",
+            character_image:
+  mapleData.character_image ||
+  `https://avatar.maplestory.nexon.com/Character/${encodeURIComponent(
+    row.nickname
+  )}.png`,
           };
         } catch {
           return {
