@@ -5,11 +5,8 @@ export async function GET(req: Request) {
   const characterName = searchParams.get("name")?.trim();
 
   if (!characterName) {
-    return Response.json({
-      error: "캐릭터명이 없음",
-    });
+    return Response.json({ error: "캐릭터명이 없음" }, { status: 400 });
   }
-
 
   try {
     const ocidRes = await fetch(
@@ -54,12 +51,35 @@ export async function GET(req: Request) {
       });
     }
 
+    const statRes = await fetch(
+      `https://open.api.nexon.com/maplestory/v1/character/stat?ocid=${ocidData.ocid}`,
+      {
+        headers: {
+          "x-nxopen-api-key": API_KEY,
+        },
+      }
+    );
+
+    const statData = await statRes.json();
+
+    let combatPower = "";
+
+    if (statRes.ok && Array.isArray(statData.final_stat)) {
+      const combatStat = statData.final_stat.find(
+        (item: { stat_name: string; stat_value: string }) =>
+          item.stat_name === "전투력"
+      );
+
+      combatPower = combatStat?.stat_value || "";
+    }
+
     return Response.json({
       name: infoData.character_name,
       level: infoData.character_level,
       job: infoData.character_class,
       world: infoData.world_name,
       character_image: infoData.character_image,
+      combat_power: combatPower,
     });
   } catch (err) {
     return Response.json({
