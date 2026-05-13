@@ -1861,7 +1861,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   <img
     src={profile.character_image}
     alt={currentCharacterName || "캐릭터"}
-    className="scale-[3.2] -translate-y-1"
+    className="scale-[3.2] -translate-y-3"
   />
 </div>
   )}
