@@ -175,7 +175,6 @@ await fetch("/api/discord", {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupNickname, setSignupNickname] = useState("");
   const [signupCharacterName, setSignupCharacterName] = useState("");
-  const [signupJob, setSignupJob] = useState("");
 
   const [boss, setBoss] = useState("");
   const [date, setDate] = useState("");
@@ -643,7 +642,6 @@ await fetch("/api/discord", {
   !signupPassword ||
   !signupNickname ||
   !signupCharacterName ||
-  !signupJob
 ) {
   alert("회원가입 항목을 전부 입력해줘.");
   return;
@@ -1428,13 +1426,6 @@ if (nextManualClosed) {
                 onChange={(e) => setSignupCharacterName(e.target.value)}
                 type="text"
                 placeholder="메이플 캐릭터명"
-                className="w-full rounded-xl border border-zinc-300 px-4 py-3 outline-none"
-              />
-              <input
-                value={signupJob}
-                onChange={(e) => setSignupJob(e.target.value)}
-                type="text"
-                placeholder="직업"
                 className="w-full rounded-xl border border-zinc-300 px-4 py-3 outline-none"
               />
               <button
