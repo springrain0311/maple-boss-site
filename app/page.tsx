@@ -1940,11 +1940,11 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   </span>
 
   {item.rank <= 3 && item.character_image && (
-    <div className="h-12 w-12 overflow-hidden rounded-xl flex items-center justify-center">
+    <div className="h-13 w-13 overflow-hidden rounded-xl flex items-center justify-center">
   <img
     src={item.character_image}
     alt={item.nickname}
-    className="scale-[1.8] -translate-y-0.5"
+    className="scale-[2.4] -translate-y-1"
   />
 </div>
   )}
