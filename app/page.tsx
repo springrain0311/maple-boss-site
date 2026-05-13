@@ -654,6 +654,8 @@ if (!mapleData) {
   return;
 }
 
+const characterImage = `https://avatar.maplestory.nexon.com/Character/${encodeURIComponent(signupCharacterName)}.png`;
+
     const { data: existingNickname } = await supabase
       .from("users")
       .select("id")
