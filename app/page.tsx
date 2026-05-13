@@ -35,6 +35,13 @@ type PartyComment = {
   created_at: string;
 };
 
+type MapleEvent = {
+  title: string;
+  url?: string;
+  date_event_start?: string;
+  date_event_end?: string;
+};
+
 type SewerRank = {
   rank: number;
   nickname: string;
@@ -152,6 +159,7 @@ await fetch("/api/discord", {
   const [guildUsers, setGuildUsers] = useState<GuildUser[]>([]);
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
 const [sewerRanking, setSewerRanking] = useState<SewerRank[]>([]);
+  const [mapleEvents, setMapleEvents] = useState<MapleEvent[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [adminLoading, setAdminLoading] = useState(false);
@@ -457,6 +465,23 @@ const loadSewerRanking = async () => {
     console.error("수로 랭킹 불러오기 실패:", error);
   }
 };
+
+  const loadMapleEvents = async () => {
+  try {
+    const res = await fetch("/api/maple-events");
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      console.error("메이플 이벤트 불러오기 실패:", data);
+      return;
+    }
+
+    setMapleEvents(data.event_notice || []);
+  } catch (error) {
+    console.error("메이플 이벤트 불러오기 실패:", error);
+  }
+};
+  
   const ensureUserProfile = async (authUser: User) => {
     const fallbackNickname =
       (authUser.user_metadata?.nickname as string | undefined) ||
@@ -536,6 +561,7 @@ const loadSewerRanking = async () => {
 
   useEffect(() => {
   void loadSewerRanking();
+  void loadMapleEvents();
 
   if (typeof window !== "undefined") {
       if (window.location.hash.includes("type=recovery")) {
@@ -1922,7 +1948,43 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
       />
     </div>
   )}
+<aside className="fixed right-6 top-24 hidden w-72 xl:block">
+  <div className="rounded-2xl bg-white p-4 shadow-sm">
+    <div className="mb-3">
+      <p className="text-lg font-bold">🎁 메이플 이벤트</p>
+      <p className="text-xs text-zinc-500">진행 중 이벤트</p>
+    </div>
 
+    <div className="space-y-2">
+      {mapleEvents.slice(0, 6).map((event, index) => (
+        <a
+          key={`${event.title}-${index}`}
+          href={event.url || "https://maplestory.nexon.com"}
+          target="_blank"
+          rel="noreferrer"
+          className="block rounded-xl border border-pink-100 bg-pink-50 px-3 py-3 text-sm transition hover:bg-pink-100"
+        >
+          <p className="line-clamp-2 font-semibold text-zinc-800">
+            {event.title}
+          </p>
+
+          {(event.date_event_start || event.date_event_end) && (
+            <p className="mt-1 text-xs text-zinc-500">
+              {event.date_event_start?.slice(0, 10)} ~{" "}
+              {event.date_event_end?.slice(0, 10)}
+            </p>
+          )}
+        </a>
+      ))}
+
+      {mapleEvents.length === 0 && (
+        <p className="rounded-xl bg-zinc-50 px-3 py-3 text-sm text-zinc-500">
+          이벤트를 불러오는 중...
+        </p>
+      )}
+    </div>
+  </div>
+</aside>
   <span className="font-medium">{item.nickname}</span>
 </div>
 
