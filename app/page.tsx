@@ -680,7 +680,7 @@ const characterImage = `https://avatar.maplestory.nexon.com/Character/${encodeUR
     job: mapleData.character_class,
     level: mapleData.character_level,
     world: mapleData.world_name,
-character_image: mapleData.character_image,
+character_image: character_image,
   },
 },
     });
@@ -702,7 +702,7 @@ character_image: mapleData.character_image,
 
       level: mapleData.character_level,
       world: mapleData.world_name,
-      character_image: mapleData.character_image,
+      character_image: character_image,
 
       is_approved: false,
     },
