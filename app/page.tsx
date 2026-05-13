@@ -1643,7 +1643,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
         <img
           src={leaderProfile.character_image}
           alt={party.leader}
-          className="scale-[3.2] -translate-y-1"
+          className="scale-[3] -translate-y-3"
         />
       ) : (
         <div className="text-xs text-zinc-400">이미지 없음</div>
