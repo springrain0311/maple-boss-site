@@ -702,7 +702,7 @@ job: mapleData.job,
 
       level: mapleData.character_level,
       world: mapleData.world_name,
-      character_image: characterImage,
+      character_image: mapleData.character_image,
 
       is_approved: false,
     },
@@ -1302,6 +1302,57 @@ if (nextManualClosed) {
     }
   };
 
+const handleRefreshAllUsers = async () => {
+  if (!isAdmin) {
+    alert("관리자만 사용할 수 있어.");
+    return;
+  }
+
+  const ok = confirm("전체 유저의 메이플 정보를 새로고침할까?");
+  if (!ok) return;
+
+  setAdminLoading(true);
+
+  try {
+    for (const guildUser of guildUsers) {
+      if (!guildUser.character_name) continue;
+
+      const res = await fetch(
+        `/api/maple?name=${encodeURIComponent(guildUser.character_name)}`
+      );
+
+      const mapleData = await res.json();
+
+      if (!res.ok || mapleData.error) {
+        console.error("메이플 정보 갱신 실패:", guildUser.character_name, mapleData);
+        continue;
+      }
+
+      const { error } = await supabase
+        .from("users")
+        .update({
+          job: mapleData.job,
+          level: mapleData.level,
+          world: mapleData.world,
+          character_image: mapleData.character_image,
+        })
+        .eq("id", guildUser.id);
+
+      if (error) {
+        console.error("유저 정보 업데이트 실패:", guildUser.nickname, error);
+      }
+    }
+
+    await loadGuildUsers(true);
+    alert("전체 유저 정보 새로고침 완료!");
+  } catch (error) {
+    console.error("전체 유저 새로고침 실패:", error);
+    alert("새로고침 중 오류가 났어.");
+  }
+
+  setAdminLoading(false);
+};
+      
   const handleRevokeUser = async (targetId: string) => {
     const { error } = await supabase
       .from("users")
@@ -1860,7 +1911,36 @@ if (nextManualClosed) {
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+  <button
+    onClick={handleRefreshAllUsers}
+    className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
+  >
+    유저정보 새로고침
+  </button>
+
+  <button
+    onClick={() => setAdminTab("pending")}
+    className={`rounded-xl px-4 py-2 text-sm font-medium ${
+      adminTab === "pending"
+        ? "bg-black text-white"
+        : "border border-zinc-300 bg-white"
+    }`}
+  >
+    승인 대기 ({pendingUsers.length})
+  </button>
+
+  <button
+    onClick={() => setAdminTab("approved")}
+    className={`rounded-xl px-4 py-2 text-sm font-medium ${
+      adminTab === "approved"
+        ? "bg-black text-white"
+        : "border border-zinc-300 bg-white"
+    }`}
+  >
+    승인 완료 ({approvedUsers.length})
+  </button>
+</div>
                   <button
                     onClick={() => setAdminTab("pending")}
                     className={`rounded-xl px-4 py-2 text-sm font-medium ${
