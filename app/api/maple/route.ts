@@ -42,11 +42,12 @@ export async function GET(req: Request) {
     const infoData = await infoRes.json();
 
     return Response.json({
-      name: infoData.character_name,
-      level: infoData.character_level,
-      job: infoData.character_class,
-      world: infoData.world_name,
-    });
+  name: infoData.character_name,
+  level: infoData.character_level,
+  job: infoData.character_class,
+  world: infoData.world_name,
+  character_image: infoData.character_image,
+});
   } catch (err) {
     return Response.json({
       error: "서버 오류",
