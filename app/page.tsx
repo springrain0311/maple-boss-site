@@ -1860,7 +1860,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
       <img
         src={profile.character_image}
         alt={currentCharacterName || "캐릭터"}
-        className="h-16 w-16 rounded-xl border border-zinc-200 bg-white object-contain"
+        className="h-20 w-20 rounded-xl object-cover scale-125"
       />
     )}
 
