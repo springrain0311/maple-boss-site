@@ -650,7 +650,9 @@ await fetch("/api/discord", {
   return;
 }
 
-const mapleData = await fetchCharacterInfo(signupCharacterName);
+const cleanedCharacterName = signupCharacterName.trim();
+
+const mapleData = await fetchCharacterInfo(cleanedCharacterName);
 
 if (!mapleData) {
   alert("존재하지 않는 메이플 캐릭터야.");
@@ -1479,7 +1481,9 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
               />
               <input
                 value={signupCharacterName}
-                onChange={(e) => setSignupCharacterName(e.target.value)}
+                onChange={(e) =>
+  setSignupCharacterName(e.target.value.replace(/\s/g, ""))
+}
                 type="text"
                 placeholder="메이플 캐릭터명"
                 className="w-full rounded-xl border border-zinc-300 px-4 py-3 outline-none"
