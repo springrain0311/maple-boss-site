@@ -1940,13 +1940,13 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   </span>
 
   {item.rank <= 3 && item.character_image && (
-    <div className="h-10 w-10 overflow-hidden rounded-xl flex items-center justify-center">
-      <img
-        src={item.character_image}
-        alt={item.nickname}
-        className="scale-[2.4] -translate-y-1"
-      />
-    </div>
+    <div className="h-12 w-12 overflow-hidden rounded-xl flex items-center justify-center">
+  <img
+    src={item.character_image}
+    alt={item.nickname}
+    className="scale-[1.8] -translate-y-0.5"
+  />
+</div>
   )}
 <aside className="fixed right-6 top-24 hidden w-72 xl:block">
   <div className="rounded-2xl bg-white p-4 shadow-sm">
