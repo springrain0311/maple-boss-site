@@ -54,6 +54,7 @@ type GuildUser = {
   level?: number | null;
   world?: string | null;
   character_image?: string | null;
+  combat_power?: string | null;
   is_approved: boolean;
   created_at?: string | null;
 };
@@ -328,7 +329,7 @@ await fetch("/api/discord", {
 
     const { data, error } = await supabase
       .from("users")
-      .select("id, nickname, character_name, job, level, world, character_image, is_approved, created_at")
+      .select("id, nickname, character_name, job, level, world, character_image, combat_power, is_approved, created_at")
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -1333,11 +1334,12 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
       const { error } = await supabase
         .from("users")
         .update({
-          job: mapleData.job,
-          level: mapleData.level,
-          world: mapleData.world,
-          character_image: mapleData.character_image,
-        })
+  job: mapleData.job,
+  level: mapleData.level,
+  world: mapleData.world,
+  character_image: mapleData.character_image,
+  combat_power: mapleData.combat_power,
+})
         .eq("id", guildUser.id);
 
       if (error) {
@@ -1653,6 +1655,17 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
     <p className="mt-3 text-sm text-zinc-700">
       파티장: <span className="font-semibold">{party.leader}</span>
     </p>
+    {leaderProfile?.level && (
+  <p className="mt-1 text-xs text-zinc-500">
+    Lv.{leaderProfile.level} · {leaderProfile.job}
+  </p>
+)}
+
+{leaderProfile?.combat_power && (
+  <p className="mt-1 text-xs font-semibold text-zinc-700">
+    전투력 {Number(leaderProfile.combat_power).toLocaleString()}
+  </p>
+)}
   </div>
 </div>
 
