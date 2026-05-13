@@ -66,7 +66,7 @@ type SiteSettings = {
 };
 
 const ADMIN_EMAILS = ["c-tiger@naver.com"];
-const MAPLE_API_KEY = process.env.NEXT_PUBLIC_MAPLE_API_KEY;
+const MAPLE_API_KEY = process.env.MAPLE_API_KEY;
 const fetchCharacterInfo = async (characterName: string) => {
   try {
     // 1차 : OCID 조회
