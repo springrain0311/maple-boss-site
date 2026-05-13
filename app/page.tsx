@@ -474,10 +474,10 @@ await fetch("/api/discord", {
     setProfile(fallbackProfile);
 
     const { data, error } = await supabase
-      .from("users")
-      .select("id, nickname, character_name, job, is_approved")
-      .eq("id", authUser.id)
-      .single();
+  .from("users")
+  .select("id, nickname, character_name, job, world, character_image, level, is_approved")
+  .eq("id", authUser.id)
+  .single();
 
     if (error || !data) {
       const { error: upsertError } = await supabase.from("users").upsert(
