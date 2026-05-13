@@ -677,10 +677,10 @@ const characterImage = `https://avatar.maplestory.nexon.com/Character/${encodeUR
   data: {
     nickname: signupNickname,
     character_name: signupCharacterName,
-    job: mapleData.character_class,
-    level: mapleData.character_level,
-    world: mapleData.world_name,
-character_image: characterImage,
+    level: mapleData.level,
+world: mapleData.world,
+character_image: mapleData.character_image,
+job: mapleData.job,
   },
 },
     });
