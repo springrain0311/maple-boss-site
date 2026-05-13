@@ -51,9 +51,11 @@ type GuildUser = {
   nickname: string;
   character_name: string;
   job: string;
+  level?: number | null;
+  world?: string | null;
+  character_image?: string | null;
   is_approved: boolean;
   created_at?: string | null;
-  level?: number;
 };
 
 type SiteSettings = {
