@@ -35,6 +35,12 @@ type PartyComment = {
   created_at: string;
 };
 
+type SewerRank = {
+  rank: number;
+  nickname: string;
+  score: number;
+};
+
 type Profile = {
   id: string;
   nickname: string;
@@ -144,7 +150,8 @@ await fetch("/api/discord", {
   const [comments, setComments] = useState<PartyComment[]>([]);
   const [guildUsers, setGuildUsers] = useState<GuildUser[]>([]);
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
-
+const [sewerRanking, setSewerRanking] = useState<SewerRank[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [adminLoading, setAdminLoading] = useState(false);
 
@@ -434,7 +441,21 @@ await fetch("/api/discord", {
 
     setLoading(false);
   };
+const loadSewerRanking = async () => {
+  try {
+    const res = await fetch("/api/sewer-ranking");
+    const data = await res.json();
 
+    if (!res.ok || data.error) {
+      console.error("수로 랭킹 불러오기 실패:", data);
+      return;
+    }
+
+    setSewerRanking(data);
+  } catch (error) {
+    console.error("수로 랭킹 불러오기 실패:", error);
+  }
+};
   const ensureUserProfile = async (authUser: User) => {
     const fallbackNickname =
       (authUser.user_metadata?.nickname as string | undefined) ||
@@ -513,7 +534,9 @@ await fetch("/api/discord", {
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+  void loadSewerRanking();
+
+  if (typeof window !== "undefined") {
       if (window.location.hash.includes("type=recovery")) {
         setResetMode(true);
       }
@@ -1364,6 +1387,42 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   if (!authReady || !profileReady) {
     return (
       <main className="min-h-screen overflow-x-hidden bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
+        <aside className="fixed left-6 top-24 hidden w-64 xl:block">
+  <div className="rounded-2xl bg-white p-4 shadow-sm">
+    <div className="mb-3">
+      <p className="text-lg font-bold">🏆 수로 랭킹</p>
+      <p className="text-xs text-zinc-500">이번 주 TOP 10</p>
+    </div>
+
+    <div className="space-y-2">
+      {sewerRanking.slice(0, 10).map((item) => (
+        <div
+          key={`${item.rank}-${item.nickname}`}
+          className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${
+            item.rank <= 3 ? "bg-amber-50" : "bg-zinc-50"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-6 text-center font-bold">
+              {item.rank === 1
+                ? "🥇"
+                : item.rank === 2
+                ? "🥈"
+                : item.rank === 3
+                ? "🥉"
+                : item.rank}
+            </span>
+            <span className="font-medium">{item.nickname}</span>
+          </div>
+
+          <span className="text-xs text-zinc-500">
+            {item.score.toLocaleString()}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+</aside>
         <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
           불러오는 중...
         </div>
