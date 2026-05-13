@@ -1793,35 +1793,28 @@ if (nextManualClosed) {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-  <img
-    src={profile?.character_image || ""}
-    alt="캐릭터"
-    className="h-16 w-16 rounded-xl border border-zinc-200 bg-white"
-  />
+            <div className="flex flex-col items-start gap-2 lg:items-end">
 
-  <div className="text-sm">
-    <p className="font-semibold">
-      {currentCharacterName || "없음"}
+  <div className="rounded-2xl bg-zinc-50 p-4 text-sm shadow-sm min-w-[220px]">
+    <p className="font-bold text-base">{currentNickname}</p>
+
+    <p className="text-zinc-600">
+      {currentCharacterName || "캐릭터 없음"}
     </p>
 
-    <p>
-      Lv.{profile?.level || "?"} {currentJob || ""}
-    </p>
-
-    <p className="text-zinc-500">
-      {profile?.world || ""}
+    <p className="text-zinc-500 text-xs">
+      Lv.{profile?.level || "?"} · {currentJob || "직업 없음"}
     </p>
   </div>
-</div>
 
-              <button
-                onClick={handleLogout}
-                className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
-              >
-                로그아웃
-              </button>
-            </div>
+  <button
+    onClick={handleLogout}
+    className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
+  >
+    로그아웃
+  </button>
+
+</div>
           </div>
         </div>
 
