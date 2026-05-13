@@ -502,14 +502,15 @@ await fetch("/api/discord", {
     }
 
     setProfile({
-      id: data.id,
-      nickname: data.nickname || fallbackNickname,
-      character_name: data.character_name || fallbackCharacterName,
-      job: data.job || fallbackJob,
-      world: data.world || "",
-character_image: data.character_image || "",
-      is_approved: data.is_approved === true,
-    });
+  id: data.id,
+  nickname: data.nickname || fallbackNickname,
+  character_name: data.character_name || fallbackCharacterName,
+  job: data.job || fallbackJob,
+  world: data.world || "",
+  character_image: data.character_image || "",
+  level: data.level || 0,
+  is_approved: data.is_approved === true,
+});
   };
 
   const bootstrapUser = async (authUser: User) => {
@@ -680,6 +681,8 @@ const characterImage = `https://avatar.maplestory.nexon.com/Character/${encodeUR
     character_name: signupCharacterName,
     job: mapleData.character_class,
     level: mapleData.character_level,
+    world: mapleData.world_name,
+character_image: mapleData.character_image,
   },
 },
     });
@@ -1502,6 +1505,15 @@ if (nextManualClosed) {
           </p>
 
           <div className="mt-6 rounded-2xl bg-zinc-50 p-4 text-sm shadow-sm">
+
+  {profile?.character_image && (
+    <img
+      src={profile.character_image}
+      alt="캐릭터"
+      className="w-20 h-20 rounded-xl mb-3"
+    />
+  )}
+
   <p className="font-bold text-base">{currentNickname}</p>
 
   <p className="text-zinc-600 mt-1">
