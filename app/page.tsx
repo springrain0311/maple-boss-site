@@ -1892,12 +1892,28 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
       {sewerRanking.slice(0, 10).map((item) => (
         <div
           key={`${item.rank}-${item.nickname}`}
-          className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${
-            item.rank <= 3 ? "bg-amber-50" : "bg-zinc-50"
-          }`}
+          className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm ${
+  item.rank === 1
+    ? "border-yellow-300 bg-yellow-50"
+    : item.rank === 2
+    ? "border-zinc-300 bg-zinc-50"
+    : item.rank === 3
+    ? "border-orange-300 bg-orange-50"
+    : "border-transparent bg-zinc-50"
+}`}
         >
           <div className="flex items-center gap-2">
-  {item.rank <= 3 && item.character_image ? (
+  <span className="w-5 text-center font-bold">
+    {item.rank === 1
+      ? "🥇"
+      : item.rank === 2
+      ? "🥈"
+      : item.rank === 3
+      ? "🥉"
+      : item.rank}
+  </span>
+
+  {item.rank <= 3 && item.character_image && (
     <div className="h-10 w-10 overflow-hidden rounded-xl flex items-center justify-center">
       <img
         src={item.character_image}
@@ -1905,16 +1921,6 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
         className="scale-[2.4] -translate-y-1"
       />
     </div>
-  ) : (
-    <span className="w-6 text-center font-bold">
-      {item.rank === 1
-        ? "🥇"
-        : item.rank === 2
-        ? "🥈"
-        : item.rank === 3
-        ? "🥉"
-        : item.rank}
-    </span>
   )}
 
   <span className="font-medium">{item.nickname}</span>
