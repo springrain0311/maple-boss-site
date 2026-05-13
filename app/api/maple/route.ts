@@ -10,6 +10,7 @@ export async function GET(req: Request) {
     });
   }
 
+
   try {
     const ocidRes = await fetch(
       `https://open.api.nexon.com/maplestory/v1/id?character_name=${encodeURIComponent(
