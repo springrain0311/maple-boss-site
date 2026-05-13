@@ -1588,7 +1588,6 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   }
 
   const renderPartyCard = (party: Party) => {
-    const partyApplications = applicationsByParty[party.id] || [];
   const partyComments = commentsByParty[party.id] || [];
     const actualCurrentMembers = 1 + partyApplications.length;
     const isLeader = currentNickname === party.leader;
