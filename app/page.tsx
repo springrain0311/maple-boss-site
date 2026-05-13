@@ -1941,7 +1941,7 @@ const handleRefreshAllUsers = async () => {
     승인 완료 ({approvedUsers.length})
   </button>
 </div>
-
+ </div>
               <div className="mt-4">
                 {adminLoading ? (
                   <div className="rounded-xl bg-zinc-50 p-4 text-sm">
