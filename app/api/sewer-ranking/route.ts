@@ -1,37 +1,39 @@
-export async function GET() {
-  const csvUrl = process.env.GOOGLE_SHEET_CSV_URL;
+const parsedRows = text
+  .trim()
+  .split("\n")
+  .slice(1)
+  .map((line) => {
+    const [rank, nickname, score] = line.split(",");
 
-  if (!csvUrl) {
-    return Response.json({ error: "GOOGLE_SHEET_CSV_URL 없음" }, { status: 500 });
-  }
+    return {
+      rank: Number(rank),
+      nickname: nickname?.trim(),
+      score: Number(score),
+    };
+  })
+  .filter((row) => row.rank && row.nickname && row.score);
 
-  try {
-    const res = await fetch(csvUrl, {
-      cache: "no-store",
-    });
+const rows = await Promise.all(
+  parsedRows.map(async (row) => {
+    if (row.rank > 3) {
+      return row;
+    }
 
-    const text = await res.text();
+    try {
+      const mapleRes = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/maple?name=${encodeURIComponent(
+          row.nickname
+        )}`
+      );
 
-    const rows = text
-      .trim()
-      .split("\n")
-      .slice(1)
-      .map((line) => {
-        const [rank, nickname, score] = line.split(",");
+      const mapleData = await mapleRes.json();
 
-        return {
-          rank: Number(rank),
-          nickname: nickname?.trim(),
-          score: Number(score),
-        };
-      })
-      .filter((row) => row.rank && row.nickname && row.score);
-
-    return Response.json(rows);
-  } catch (error) {
-    return Response.json(
-      { error: "수로 랭킹 불러오기 실패" },
-      { status: 500 }
-    );
-  }
-}
+      return {
+        ...row,
+        character_image: mapleData.character_image || "",
+      };
+    } catch {
+      return row;
+    }
+  })
+);
