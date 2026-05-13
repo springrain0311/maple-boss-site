@@ -1855,17 +1855,28 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
             <div className="flex flex-col items-start gap-2 lg:items-end">
 
   <div className="rounded-2xl bg-zinc-50 p-4 text-sm shadow-sm min-w-[220px]">
-    <p className="font-bold text-base">{currentNickname}</p>
+  <div className="flex items-center gap-3">
+    {profile?.character_image && (
+      <img
+        src={profile.character_image}
+        alt={currentCharacterName || "캐릭터"}
+        className="h-16 w-16 rounded-xl border border-zinc-200 bg-white object-contain"
+      />
+    )}
 
-    <p className="text-zinc-600">
-      {currentCharacterName || "캐릭터 없음"}
-    </p>
+    <div>
+      <p className="font-bold text-base">{currentNickname}</p>
 
-    <p className="text-zinc-500 text-xs">
-      Lv.{profile?.level || "?"} · {currentJob || "직업 없음"}
-    </p>
+      <p className="text-zinc-600">
+        {currentCharacterName || "캐릭터 없음"}
+      </p>
+
+      <p className="text-zinc-500 text-xs">
+        Lv.{profile?.level || "?"} · {currentJob || "직업 없음"}
+      </p>
+    </div>
   </div>
-
+</div>
   <button
     onClick={handleLogout}
     className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
