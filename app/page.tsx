@@ -719,7 +719,6 @@ character_image: mapleData.character_image,
     setSignupPassword("");
     setSignupNickname("");
     setSignupCharacterName("");
-    setSignupJob("");
 
     setAuthLoading(false);
     setAuthMessage("가입 완료! 이제 관리자 승인 후 사용할 수 있어.");
