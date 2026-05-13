@@ -21,7 +21,7 @@ const rows = await Promise.all(
 
     try {
       const mapleRes = await fetch(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/api/maple?name=${encodeURIComponent(
+        `${process.env.NEXT_PUBLIC_SITE_URL1}/api/maple?name=${encodeURIComponent(
           row.nickname
         )}`
       );
