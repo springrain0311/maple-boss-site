@@ -66,38 +66,19 @@ type SiteSettings = {
 };
 
 const ADMIN_EMAILS = ["c-tiger@naver.com"];
-const MAPLE_API_KEY = process.env.MAPLE_API_KEY;
 const fetchCharacterInfo = async (characterName: string) => {
+  const cleanedName = characterName.trim().replace(/\s/g, "");
+
   try {
-    // 1차 : OCID 조회
-    const ocidRes = await fetch(
-      `https://open.api.nexon.com/maplestory/v1/id?character_name=${encodeURIComponent(characterName)}`,
-      {
-        headers: {
-          "x-nxopen-api-key": MAPLE_API_KEY || "",
-        },
-      }
-    );
+    const res = await fetch(`/api/maple?name=${encodeURIComponent(cleanedName)}`);
+    const data = await res.json();
 
-    const ocidData = await ocidRes.json();
-
-    if (!ocidData.ocid) {
+    if (!res.ok || data.error) {
+      console.error("메이플 캐릭터 조회 실패:", data);
       return null;
     }
 
-    // 2차 : 캐릭터 기본정보 조회
-    const charRes = await fetch(
-      `https://open.api.nexon.com/maplestory/v1/character/basic?ocid=${ocidData.ocid}`,
-      {
-        headers: {
-          "x-nxopen-api-key": MAPLE_API_KEY || "",
-        },
-      }
-    );
-
-    const charData = await charRes.json();
-
-    return charData;
+    return data;
   } catch (error) {
     console.error("메이플 API 오류:", error);
     return null;
