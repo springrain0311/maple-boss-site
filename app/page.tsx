@@ -641,7 +641,7 @@ await fetch("/api/discord", {
   !signupEmail ||
   !signupPassword ||
   !signupNickname ||
-  !signupCharacterName ||
+  !signupCharacterName
 ) {
   alert("회원가입 항목을 전부 입력해줘.");
   return;
