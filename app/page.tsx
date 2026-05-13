@@ -1911,7 +1911,7 @@ const handleRefreshAllUsers = async () => {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+<div className="flex flex-wrap gap-2">
   <button
     onClick={handleRefreshAllUsers}
     className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium"
@@ -1941,28 +1941,6 @@ const handleRefreshAllUsers = async () => {
     승인 완료 ({approvedUsers.length})
   </button>
 </div>
-                  <button
-                    onClick={() => setAdminTab("pending")}
-                    className={`rounded-xl px-4 py-2 text-sm font-medium ${
-                      adminTab === "pending"
-                        ? "bg-black text-white"
-                        : "border border-zinc-300 bg-white"
-                    }`}
-                  >
-                    승인 대기 ({pendingUsers.length})
-                  </button>
-                  <button
-                    onClick={() => setAdminTab("approved")}
-                    className={`rounded-xl px-4 py-2 text-sm font-medium ${
-                      adminTab === "approved"
-                        ? "bg-black text-white"
-                        : "border border-zinc-300 bg-white"
-                    }`}
-                  >
-                    승인 완료 ({approvedUsers.length})
-                  </button>
-                </div>
-              </div>
 
               <div className="mt-4">
                 {adminLoading ? (
