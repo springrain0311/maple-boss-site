@@ -59,181 +59,43 @@ type SiteSettings = {
 };
 
 const ADMIN_EMAILS = ["c-tiger@naver.com"];
+const MAPLE_API_KEY = process.env.NEXT_PUBLIC_MAPLE_API_KEY;
+const fetchCharacterInfo = async (characterName: string) => {
+  try {
+    // 1차 : OCID 조회
+    const ocidRes = await fetch(
+      `https://open.api.nexon.com/maplestory/v1/id?character_name=${encodeURIComponent(characterName)}`,
+      {
+        headers: {
+          "x-nxopen-api-key": MAPLE_API_KEY || "",
+        },
+      }
+    );
 
-function BlossomDecor() {
-  const leftPetals = [
-    { top: "12%", left: "34%", delay: "0s", duration: "12s", scale: 0.8 },
-    { top: "26%", left: "58%", delay: "2s", duration: "14s", scale: 1 },
-    { top: "44%", left: "28%", delay: "1.4s", duration: "13s", scale: 0.7 },
-    { top: "68%", left: "62%", delay: "3.1s", duration: "15s", scale: 0.9 },
-  ];
+    const ocidData = await ocidRes.json();
 
-  const rightPetals = [
-    { top: "16%", right: "38%", delay: "0.8s", duration: "13s", scale: 0.9 },
-    { top: "34%", right: "24%", delay: "2.8s", duration: "15s", scale: 0.75 },
-    { top: "52%", right: "56%", delay: "1.2s", duration: "12s", scale: 1 },
-    { top: "74%", right: "30%", delay: "3.5s", duration: "14s", scale: 0.8 },
-  ];
+    if (!ocidData.ocid) {
+      return null;
+    }
 
-  return (
-    <>
-      <div className="pointer-events-none fixed inset-y-0 left-0 z-0 hidden w-40 overflow-hidden xl:block">
-        <div className="absolute inset-0 bg-gradient-to-r from-pink-100/70 via-rose-50/20 to-transparent" />
-        <div className="absolute -left-10 top-0 h-full w-24 bg-pink-200/10 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-full opacity-70">
-          <svg
-            viewBox="0 0 220 900"
-            className="h-[92vh] w-full"
-            preserveAspectRatio="xMinYMax meet"
-          >
-            <path
-              d="M28 900 C48 780, 74 700, 88 610 C98 540, 92 470, 112 404 C130 344, 164 296, 170 230"
-              fill="none"
-              stroke="rgba(120,72,88,0.26)"
-              strokeWidth="10"
-              strokeLinecap="round"
-            />
-            <path
-              d="M92 560 C58 520, 42 490, 28 440"
-              fill="none"
-              stroke="rgba(120,72,88,0.2)"
-              strokeWidth="6"
-              strokeLinecap="round"
-            />
-            <path
-              d="M108 470 C146 430, 176 388, 194 338"
-              fill="none"
-              stroke="rgba(120,72,88,0.2)"
-              strokeWidth="6"
-              strokeLinecap="round"
-            />
-            <path
-              d="M84 690 C42 650, 26 622, 12 580"
-              fill="none"
-              stroke="rgba(120,72,88,0.18)"
-              strokeWidth="6"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
+    // 2차 : 캐릭터 기본정보 조회
+    const charRes = await fetch(
+      `https://open.api.nexon.com/maplestory/v1/character/basic?ocid=${ocidData.ocid}`,
+      {
+        headers: {
+          "x-nxopen-api-key": MAPLE_API_KEY || "",
+        },
+      }
+    );
 
-        {leftPetals.map((petal, i) => (
-          <span
-            key={i}
-            className="sakura-petal absolute"
-            style={{
-              top: petal.top,
-              left: petal.left,
-              animationDelay: petal.delay,
-              animationDuration: petal.duration,
-              transform: `scale(${petal.scale})`,
-            }}
-          />
-        ))}
-      </div>
+    const charData = await charRes.json();
 
-      <div className="pointer-events-none fixed inset-y-0 right-0 z-0 hidden w-40 overflow-hidden xl:block">
-        <div className="absolute inset-0 bg-gradient-to-l from-pink-100/70 via-rose-50/20 to-transparent" />
-        <div className="absolute -right-10 top-0 h-full w-24 bg-pink-200/10 blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-full opacity-70">
-          <svg
-            viewBox="0 0 220 900"
-            className="h-[92vh] w-full"
-            preserveAspectRatio="xMaxYMax meet"
-          >
-            <path
-              d="M192 900 C172 780, 146 700, 132 610 C122 540, 128 470, 108 404 C90 344, 56 296, 50 230"
-              fill="none"
-              stroke="rgba(120,72,88,0.26)"
-              strokeWidth="10"
-              strokeLinecap="round"
-            />
-            <path
-              d="M128 560 C162 520, 178 490, 192 440"
-              fill="none"
-              stroke="rgba(120,72,88,0.2)"
-              strokeWidth="6"
-              strokeLinecap="round"
-            />
-            <path
-              d="M112 470 C74 430, 44 388, 26 338"
-              fill="none"
-              stroke="rgba(120,72,88,0.2)"
-              strokeWidth="6"
-              strokeLinecap="round"
-            />
-            <path
-              d="M136 690 C178 650, 194 622, 208 580"
-              fill="none"
-              stroke="rgba(120,72,88,0.18)"
-              strokeWidth="6"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-
-        {rightPetals.map((petal, i) => (
-          <span
-            key={i}
-            className="sakura-petal absolute"
-            style={{
-              top: petal.top,
-              right: petal.right,
-              animationDelay: petal.delay,
-              animationDuration: petal.duration,
-              transform: `scale(${petal.scale})`,
-            }}
-          />
-        ))}
-      </div>
-
-      <style jsx global>{`
-        .sakura-petal {
-          width: 12px;
-          height: 18px;
-          border-radius: 70% 30% 65% 35%;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 248, 252, 0.96) 0%,
-            rgba(251, 207, 232, 0.92) 58%,
-            rgba(244, 114, 182, 0.68) 100%
-          );
-          box-shadow:
-            0 2px 10px rgba(244, 114, 182, 0.12),
-            inset 0 1px 0 rgba(255, 255, 255, 0.55);
-          opacity: 0.75;
-          filter: blur(0.2px);
-          animation-name: sakuraDrift;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-        }
-
-        @keyframes sakuraDrift {
-          0% {
-            transform: translateY(0px) translateX(0px) rotate(-18deg);
-            opacity: 0.18;
-          }
-          25% {
-            transform: translateY(14px) translateX(6px) rotate(-4deg);
-            opacity: 0.72;
-          }
-          50% {
-            transform: translateY(28px) translateX(-3px) rotate(10deg);
-            opacity: 0.9;
-          }
-          75% {
-            transform: translateY(16px) translateX(8px) rotate(0deg);
-            opacity: 0.5;
-          }
-          100% {
-            transform: translateY(0px) translateX(0px) rotate(-18deg);
-            opacity: 0.18;
-          }
-        }
-      `}</style>
-    </>
-  );
-}
+    return charData;
+  } catch (error) {
+    console.error("메이플 API 오류:", error);
+    return null;
+  }
+};
 
 export default function Home() {
 const sendDiscordAlert = async (
@@ -775,7 +637,14 @@ await fetch("/api/discord", {
       !signupNickname ||
       !signupCharacterName ||
       !signupJob
-    ) {
+    )
+const mapleData = await fetchCharacterInfo(signupCharacterName);
+
+if (!mapleData) {
+  alert("존재하지 않는 메이플 캐릭터야.");
+  return;
+}
+ {
       alert("회원가입 항목을 전부 입력해줘.");
       return;
     }
@@ -801,7 +670,7 @@ await fetch("/api/discord", {
         data: {
           nickname: signupNickname,
           character_name: signupCharacterName,
-          job: signupJob,
+          job: mapleData.character_class,
         },
       },
     });
@@ -819,7 +688,7 @@ await fetch("/api/discord", {
             id: data.user.id,
             nickname: signupNickname,
             character_name: signupCharacterName,
-            job: signupJob,
+            job: mapleData.character_class,
             is_approved: false,
           },
         ],
