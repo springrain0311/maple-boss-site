@@ -1767,7 +1767,6 @@ if (nextManualClosed) {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-zinc-100 px-4 py-4 text-zinc-900 sm:px-6">
-      <BlossomDecor />
       <div className="relative z-10 mx-auto max-w-6xl">
         {siteSettings?.notice_text?.trim() && (
           <div className="mb-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
