@@ -656,8 +656,6 @@ if (!mapleData) {
   return;
 }
 
-const characterImage = `https://avatar.maplestory.nexon.com/Character/${encodeURIComponent(signupCharacterName)}.png`;
-
     const { data: existingNickname } = await supabase
       .from("users")
       .select("id")
@@ -695,18 +693,22 @@ character_image: mapleData.character_image,
 
     if (data.user) {
       const { error: profileError } = await supabase.from("users").upsert(
-        [
-          {
-  id: data.user.id,
-  nickname: signupNickname,
-  character_name: signupCharacterName,
-  job: mapleData.character_class,
-  level: mapleData.character_level,
-  is_approved: false,
-},
-        ],
-        { onConflict: "id" }
-      );
+  [
+    {
+      id: data.user.id,
+      nickname: signupNickname,
+      character_name: signupCharacterName,
+      job: mapleData.character_class,
+
+      level: mapleData.character_level,
+      world: mapleData.world_name,
+      character_image: mapleData.character_image,
+
+      is_approved: false,
+    },
+  ],
+  { onConflict: "id" }
+);
 
       if (profileError) {
         alert(`프로필 저장 실패: ${profileError.message}`);
