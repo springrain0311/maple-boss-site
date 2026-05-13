@@ -1322,7 +1322,7 @@ const handleRefreshAllUsers = async () => {
       );
 
       const mapleData = await res.json();
-
+console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
       if (!res.ok || mapleData.error) {
         console.error("메이플 정보 갱신 실패:", guildUser.character_name, mapleData);
         continue;
