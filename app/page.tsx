@@ -42,6 +42,8 @@ type Profile = {
   job: string;
   is_approved: boolean;
   level?: number;
+  world?: string;
+character_image?: string;
 };
 
 type GuildUser = {
@@ -325,7 +327,7 @@ await fetch("/api/discord", {
 
     const { data, error } = await supabase
       .from("users")
-      .select("id, nickname, character_name, job, is_approved, created_at")
+      .select("id, nickname, character_name, job, level, world, character_image, is_approved")
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -504,6 +506,8 @@ await fetch("/api/discord", {
       nickname: data.nickname || fallbackNickname,
       character_name: data.character_name || fallbackCharacterName,
       job: data.job || fallbackJob,
+      world: data.world || "",
+character_image: data.character_image || "",
       is_approved: data.is_approved === true,
     });
   };
@@ -1789,22 +1793,27 @@ if (nextManualClosed) {
               </p>
             </div>
 
-            <div className="flex flex-col items-start gap-2 lg:items-end">
-              <div className="text-sm">
-                <p>
-                  <span className="font-semibold">닉네임:</span> {currentNickname}
-                </p>
-                <p>
-                  <span className="font-semibold">캐릭터명:</span>{" "}
-                  {currentCharacterName || "없음"}
-                </p>
-                <p>
-                  <span className="font-semibold">직업:</span> {currentJob || "없음"}
-                </p>
-                <p>
-  <span className="font-semibold">레벨:</span> {profile?.level || "없음"}
-</p>
-              </div>
+            <div className="flex items-center gap-3">
+  <img
+    src={profile?.character_image || ""}
+    alt="캐릭터"
+    className="h-16 w-16 rounded-xl border border-zinc-200 bg-white"
+  />
+
+  <div className="text-sm">
+    <p className="font-semibold">
+      {currentCharacterName || "없음"}
+    </p>
+
+    <p>
+      Lv.{profile?.level || "?"} {currentJob || ""}
+    </p>
+
+    <p className="text-zinc-500">
+      {profile?.world || ""}
+    </p>
+  </div>
+</div>
 
               <button
                 onClick={handleLogout}
