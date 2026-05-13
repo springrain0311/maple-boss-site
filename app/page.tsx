@@ -1588,18 +1588,20 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   }
 
   const renderPartyCard = (party: Party) => {
+  const partyApplications = applicationsByParty[party.id] || [];
   const partyComments = commentsByParty[party.id] || [];
-    const actualCurrentMembers = 1 + partyApplications.length;
-    const isLeader = currentNickname === party.leader;
-    const alreadyApplied = partyApplications.some(
-      (a) => a.nickname === currentNickname
-    );
-    const isFull = actualCurrentMembers >= party.max_members;
-const partyApplications = applicationsByParty[party.id] || [];
-    const leaderProfile = guildUsers.find(
-  (guildUser) => guildUser.nickname === party.leader
-);
-    return (
+  const actualCurrentMembers = 1 + partyApplications.length;
+  const isLeader = currentNickname === party.leader;
+  const alreadyApplied = partyApplications.some(
+    (a) => a.nickname === currentNickname
+  );
+  const isFull = actualCurrentMembers >= party.max_members;
+
+  const leaderProfile = guildUsers.find(
+    (guildUser) => guildUser.nickname === party.leader
+  );
+
+  return (
       <div
         key={party.id}
         className="rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md"
