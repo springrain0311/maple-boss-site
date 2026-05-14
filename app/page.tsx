@@ -1944,7 +1944,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   <img
     src={item.character_image}
     alt={item.nickname}
-    className="scale-[2.5] -translate-y-1"
+    className="scale-[2.3] -translate-y-1"
   />
 </div>
   )}
