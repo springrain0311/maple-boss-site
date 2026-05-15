@@ -1804,7 +1804,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             onClick={() => handleApply(party)}
-            disabled={isLeader || alreadyApplied || party.status === "종료" || isFull}
+            disabled={isLeader || alreadyApplied || party.status !== "모집중" || isFull}
             className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
           >
             신청하기
