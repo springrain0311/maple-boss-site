@@ -1943,7 +1943,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
             </span>
 
             {item.rank <= 3 && item.character_image && (
-              <div className="h-15 w-1
+              <div className="h-15 w-15
                 overflow-hidden rounded-xl flex items-center justify-center">
                 <img
                   src={item.character_image}
