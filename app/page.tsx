@@ -1966,7 +1966,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   </a>
 </div>
   
-  <div className="rounded-2xl bg-white p-4 shadow-sm">
+  <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
     <div className="mb-3">
       <p className="text-lg font-bold">🎁 메이플 이벤트</p>
       <p className="text-xs text-zinc-500">진행 중 이벤트</p>
