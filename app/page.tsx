@@ -1955,21 +1955,6 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
       <p className="text-xs text-zinc-500">진행 중 이벤트</p>
     </div>
 
-    <div className="mt-4 rounded-2xl bg-indigo-50 p-4 shadow-sm">
-  <p className="text-lg font-bold">💬 길드 디스코드</p>
-  <p className="mt-1 text-xs text-zinc-500">
-    공지 / 보스 모집 / 이벤트 / 수로점수
-  </p>
-
-  <a
-    href="https://discord.gg/7JnVe6fEm"
-    target="_blank"
-    rel="noreferrer"
-    className="mt-4 block rounded-xl bg-indigo-600 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-indigo-700"
-  >
-    디스코드 바로가기
-  </a>
-</div>
     
     <div className="space-y-2">
       {mapleEvents.slice(0, 6).map((event, index) => (
@@ -2004,6 +1989,22 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   <span className="font-medium">{item.nickname}</span>
 </div>
 
+          <div className="mt-4 rounded-2xl bg-indigo-50 p-4 shadow-sm">
+  <p className="text-lg font-bold">💬 길드 디스코드</p>
+  <p className="mt-1 text-xs text-zinc-500">
+    공지 / 보스 모집 / 이벤트 / 수로점수
+  </p>
+
+  <a
+    href="https://discord.gg/7JnVe6fEm"
+    target="_blank"
+    rel="noreferrer"
+    className="mt-4 block rounded-xl bg-indigo-600 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-indigo-700"
+  >
+    디스코드 바로가기
+  </a>
+</div>
+          
           <span className="text-xs text-zinc-500">
             {item.score.toLocaleString()}
           </span>
