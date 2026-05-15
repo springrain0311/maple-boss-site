@@ -1979,7 +1979,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
     </p>
   </div>
 </div>
-          
+                
   )}
 <aside className="fixed right-6 top-24 hidden w-72 xl:block">
 
