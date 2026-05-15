@@ -2047,14 +2047,6 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
     </div>
   </div>
 </aside>
-  <span className="font-medium">{item.nickname}</span>
-</div>
-
-
-      ))}
-    </div>
-  </div>
-</aside>
       <div className="relative z-10 mx-auto max-w-6xl">
         {siteSettings?.notice_text?.trim() && (
           <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
