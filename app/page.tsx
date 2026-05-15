@@ -1958,7 +1958,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
     <div className="mt-4 rounded-2xl bg-indigo-50 p-4 shadow-sm">
   <p className="text-lg font-bold">💬 길드 디스코드</p>
   <p className="mt-1 text-xs text-zinc-500">
-    공지 / 보스 모집 / 수로 공유
+    공지 / 보스 모집 / 이벤트 / 수로점수
   </p>
 
   <a
