@@ -1962,7 +1962,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   </p>
 
   <a
-    href="여기에_디스코드_초대링크"
+    href="https://discord.gg/7JnVe6fEm"
     target="_blank"
     rel="noreferrer"
     className="mt-4 block rounded-xl bg-indigo-600 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-indigo-700"
