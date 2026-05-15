@@ -1922,63 +1922,77 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
         <div
           key={`${item.rank}-${item.nickname}`}
           className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm ${
-  item.rank === 1
-    ? "border-yellow-300 bg-yellow-50"
-    : item.rank === 2
-    ? "border-zinc-300 bg-zinc-50"
-    : item.rank === 3
-    ? "border-orange-300 bg-orange-50"
-    : "border-transparent bg-zinc-50"
-}`}
+            item.rank === 1
+              ? "border-yellow-300 bg-yellow-50"
+              : item.rank === 2
+              ? "border-zinc-300 bg-zinc-50"
+              : item.rank === 3
+              ? "border-orange-300 bg-orange-50"
+              : "border-transparent bg-zinc-50"
+          }`}
         >
           <div className="flex items-center gap-2">
-  <span className="w-5 text-center font-bold">
-    {item.rank === 1
-      ? "🥇"
-      : item.rank === 2
-      ? "🥈"
-      : item.rank === 3
-      ? "🥉"
-      : item.rank}
-  </span>
+            <span className="w-5 text-center font-bold">
+              {item.rank === 1
+                ? "🥇"
+                : item.rank === 2
+                ? "🥈"
+                : item.rank === 3
+                ? "🥉"
+                : item.rank}
+            </span>
 
-  {item.rank <= 3 && item.character_image && (
-    <div className="h-15 w-15 overflow-hidden rounded-xl flex items-center justify-center">
-  <img
-    src={item.character_image}
-    alt={item.nickname}
-    className="scale-[2.3] -translate-y-1"
-  />
-</div>
+            {item.rank <= 3 && item.character_image && (
+              <div className="h-12 w-12 overflow-hidden rounded-xl flex items-center justify-center">
+                <img
+                  src={item.character_image}
+                  alt={item.nickname}
+                  className="scale-[1.8] -translate-y-0.5"
+                />
+              </div>
+            )}
 
-          <div className="mt-6 rounded-2xl border border-yellow-200 bg-gradient-to-b from-yellow-50 to-white p-4 shadow-sm">
-  <p className="text-lg font-bold">👑 길드 마스터</p>
-  <p className="text-xs text-zinc-500">BOMBI GUILD MASTER</p>
+            <span className="font-medium">{item.nickname}</span>
+          </div>
 
-  <div className="mt-4 flex flex-col items-center">
-    <div className="h-28 w-28 overflow-hidden rounded-2xl bg-white flex items-center justify-center">
-      {guildMaster?.character_image && (
-        <img
-          src={guildMaster.character_image}
-          alt="길드마스터"
-          className="scale-[2.5] -translate-y-1"
-        />
-      )}
+          <span className="text-xs text-zinc-500">
+            {item.score.toLocaleString()}
+          </span>
+        </div>
+      ))}
     </div>
-
-    <p className="mt-3 text-base font-bold">
-      {guildMaster?.nickname || "덕고미콩"}
-    </p>
-
-    <p className="text-sm text-zinc-500">
-      Lv.{guildMaster?.level || "?"} · {guildMaster?.job || "?"}
-    </p>
-
-    <p className="mt-3 text-center text-xs text-zinc-500">
-      "봄비 Haze 올킬 ☔"
-    </p>
   </div>
-</div>
+
+  <div className="mt-6 rounded-2xl border border-yellow-200 bg-gradient-to-b from-yellow-50 to-white p-4 shadow-sm">
+    <p className="text-lg font-bold">👑 길드 마스터</p>
+    <p className="text-xs text-zinc-500">BOMBI GUILD MASTER</p>
+
+    <div className="mt-4 flex flex-col items-center">
+      <div className="h-28 w-28 overflow-hidden rounded-2xl bg-white flex items-center justify-center">
+        {guildMaster?.character_image && (
+          <img
+            src={guildMaster.character_image}
+            alt="길드마스터"
+            className="scale-[2.5] -translate-y-1"
+          />
+        )}
+      </div>
+
+      <p className="mt-3 text-base font-bold">
+        {guildMaster?.nickname || "덕고미콩"}
+      </p>
+
+      <p className="text-sm text-zinc-500">
+        Lv.{guildMaster?.level || "?"} · {guildMaster?.job || "?"}
+      </p>
+
+      <p className="mt-3 text-center text-xs text-zinc-500">
+        "봄비 Haze 올킬 ☔"
+      </p>
+    </div>
+  </div>
+</aside>
+          
                 
   )}
 <aside className="fixed right-6 top-24 hidden w-72 xl:block">
