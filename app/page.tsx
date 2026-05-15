@@ -1962,35 +1962,6 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
       ))}
     </div>
   </div>
-
-  <div className="mt-6 rounded-2xl border border-yellow-200 bg-gradient-to-b from-yellow-50 to-white p-4 shadow-sm">
-    <p className="text-lg font-bold">👑 길드 마스터</p>
-    <p className="text-xs text-zinc-500">BOMBI GUILD MASTER</p>
-
-    <div className="mt-4 flex flex-col items-center">
-      <div className="h-28 w-28 overflow-hidden rounded-2xl bg-white flex items-center justify-center">
-        {guildMaster?.character_image && (
-          <img
-            src={guildMaster.character_image}
-            alt="길드마스터"
-            className="scale-[2.5] -translate-y-1"
-          />
-        )}
-      </div>
-
-      <p className="mt-3 text-base font-bold">
-        {guildMaster?.nickname || "덕고미콩"}
-      </p>
-
-      <p className="text-sm text-zinc-500">
-        Lv.{guildMaster?.level || "?"} · {guildMaster?.job || "?"}
-      </p>
-
-      <p className="mt-3 text-center text-xs text-zinc-500">
-        "봄비 Haze 올 ☔"
-      </p>
-    </div>
-  </div>
 </aside>
                           
 <aside className="fixed right-6 top-24 hidden w-72 xl:block">
