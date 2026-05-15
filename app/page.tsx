@@ -1987,14 +1987,12 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
       </p>
 
       <p className="mt-3 text-center text-xs text-zinc-500">
-        "봄비 Haze 올킬 ☔"
+        "봄비 Haze 올 ☔"
       </p>
     </div>
   </div>
 </aside>
-          
-                
-  )}
+                          
 <aside className="fixed right-6 top-24 hidden w-72 xl:block">
 
   <div className="rounded-2xl bg-indigo-50 p-4 shadow-sm">
