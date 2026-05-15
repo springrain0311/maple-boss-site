@@ -1950,7 +1950,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   )}
 <aside className="fixed right-6 top-24 hidden w-72 xl:block">
 
-  <div className="mt-4 rounded-2xl bg-indigo-50 p-4 shadow-sm">
+  <div className="rounded-2xl bg-indigo-50 p-4 shadow-sm">
   <p className="text-lg font-bold">💬 길드 디스코드</p>
   <p className="mt-1 text-xs text-zinc-500">
     공지 / 보스 모집 / 이벤트 / 수로점수
@@ -2017,7 +2017,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
 </aside>
       <div className="relative z-10 mx-auto max-w-6xl">
         {siteSettings?.notice_text?.trim() && (
-          <div className="mb-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+          <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
             {siteSettings.notice_text}
           </div>
         )}
