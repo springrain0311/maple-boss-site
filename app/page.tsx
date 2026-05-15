@@ -2050,12 +2050,7 @@ console.log("메이플 갱신 데이터:", guildUser.character_name, mapleData);
   <span className="font-medium">{item.nickname}</span>
 </div>
 
-          
-          
-          <span className="text-xs text-zinc-500">
-            {item.score.toLocaleString()}
-          </span>
-        </div>
+
       ))}
     </div>
   </div>
